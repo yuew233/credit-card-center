@@ -15,12 +15,6 @@ export interface Eligibility {
   note: string;
 }
 
-function monthsSince(dateStr: string, today: string): number {
-  const [y1, m1, d1] = dateStr.split('-').map(Number);
-  const [y2, m2, d2] = today.split('-').map(Number);
-  return (y2 - y1) * 12 + (m2 - m1) + (d2 - d1) / 30;
-}
-
 function latestBonus(cards: HeldCard[]): string | null {
   const ds = cards.map((c) => c.lastBonusOn).filter((d): d is string => !!d);
   if (ds.length === 0) return null;
@@ -185,10 +179,10 @@ export function evaluateCard(card: HeldCard, allCards: HeldCard[], today: Date):
   }
 }
 
-/** 5/24：过去 24 个月内开的个人卡数量（商业卡不计入）。 */
+/** 5/24：过去 24 个月内开的个人卡数量（商业卡不计入）。以开卡日 + 24 个月为截止口径。 */
 export function fiveTwentyFour(cards: HeldCard[], today: Date): number {
   const t = todayStr(today);
   return cards.filter(
-    (c) => c.kind === 'personal' && c.openedOn && monthsSince(c.openedOn, t) <= 24 && monthsSince(c.openedOn, t) >= 0,
+    (c) => c.kind === 'personal' && c.openedOn && c.openedOn <= t && addMonths(c.openedOn, 24) > t,
   ).length;
 }

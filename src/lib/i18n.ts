@@ -108,6 +108,7 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
   'reimburse.notStartedNoDate': { zh: '第二年起（请填写开卡日期）', en: 'Starts year 2 (enter the opened date first)' },
   'reimburse.usedThisPeriod': { zh: '本期已用 {amount}', en: 'Used this period: {amount}' },
   'reimburse.markUsed': { zh: '标记已用', en: 'Mark used' },
+  'reimburse.markedUsed': { zh: '已标记 · 点按撤销', en: 'Marked · tap to undo' },
   'reimburse.logAmountPh': { zh: '记一笔金额', en: 'Log an amount' },
   'reimburse.log': { zh: '记录', en: 'Log' },
   'reimburse.ignore': { zh: '忽略这项', en: 'Ignore this' },

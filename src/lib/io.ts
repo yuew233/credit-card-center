@@ -393,10 +393,10 @@ export interface ImportSummary {
   currencyUpdated: number;
 }
 
-// 卡名规范化：去尾部括号备注（如 "Sapphire Reserve (CSR)" → "sapphire reserve"），忽略大小写。
+// 卡名规范化：去尾部括号备注（半角和全角都去，如 "Sapphire Reserve (CSR)"、"Ink Business Unlimited（第二张）"），忽略大小写。
 // 用户手写导入文件时常写简称（"Sapphire Reserve"），规范化后仍能匹配到目录产品并自动生成福利。
 function normalizeCardName(name: string): string {
-  return name.replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase();
+  return name.replace(/\s*[（(][^)）]*[)）]\s*$/, '').trim().toLowerCase();
 }
 
 function resolveProductId(c: NormalizedCard): string | null {
@@ -407,7 +407,19 @@ function resolveProductId(c: NormalizedCard): string | null {
   const byNorm = [...PRODUCT_MAP.values()].filter(
     (p) => normalizeCardName(p.name) === norm && (!c.bank || p.bank === c.bank),
   );
-  return byNorm.length === 1 ? byNorm[0].id : null;
+  if (byNorm.length === 1) return byNorm[0].id;
+  // “Premier”→“Premier / Strata Premier”：取目录名中 " / " 前的部分匹配。
+  const byFirstPart = [...PRODUCT_MAP.values()].filter(
+    (p) => normalizeCardName(p.name).split(' / ')[0] === norm && (!c.bank || p.bank === c.bank),
+  );
+  if (byFirstPart.length === 1) return byFirstPart[0].id;
+  // 兜底：去括号后的名字是目录产品名的前缀时取目录顺序第一位（如老名字 “Ink Business”→ Ink Business Preferred）。
+  // 只是尽力而为的匹配，名字本身不改；匹配不到时返回 null，分类显示待确认。
+  const byPrefix = [...PRODUCT_MAP.values()].filter(
+    (p) => norm.length > 0 && normalizeCardName(p.name).startsWith(norm) && (!c.bank || p.bank === c.bank),
+  );
+  if (byPrefix.length >= 1) return byPrefix[0].id;
+  return null;
 }
 
 function templateFor(productId: string | null, name: string): BenefitTemplate | undefined {
