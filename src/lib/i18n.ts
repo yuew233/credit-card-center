@@ -78,6 +78,7 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
     zh: '参考数据（转分比例、奖励、估值、刷卡返现）为公开信息，2026-11-18 核实；银行条款会变，请以发卡行官网为准。转分不可逆。',
     en: 'Reference data (transfer ratios, bonuses, valuations, earn rates) is public information, verified 2026-11-18; bank terms change — check the issuer’s site. Transfers are irreversible.',
   },
+  'app.version': { zh: '版本 v1.0.0', en: 'Version v1.0.0' },
 
   // ---- 通用 ----
   'common.unknownDate': { zh: '待确认', en: 'To confirm' },
@@ -98,7 +99,7 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
   'reimburse.unused': { zh: '未用', en: 'Unused' },
   'reimburse.used': { zh: '已用', en: 'Used' },
   'reimburse.all': { zh: '全部', en: 'All' },
-  'reimburse.noCards': { zh: '还没有卡。点右上角「加载示例卡」看看效果，或「导入备份」导入自己的卡。', en: 'No cards yet. Click “Load sample cards” (top right) to try it out, or “Import backup” to bring in your cards.' },
+  'reimburse.noCards': { zh: '还没有卡。去「持卡」页最下面点「加载示例卡」看看效果，或「导入备份」导入自己的卡。', en: 'No cards yet. Go to the bottom of the Cards tab and click “Load sample cards” to try it out, or “Import backup” to bring in your cards.' },
   'reimburse.noBenefits': { zh: '当前筛选下没有福利。', en: 'No benefits match the current filters.' },
   'reimburse.remaining': { zh: '还剩 {amount}', en: '{amount} left' },
   'reimburse.until': { zh: '截至 {date}', en: 'until {date}' },
@@ -140,7 +141,7 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
   'holdings.productLabel': { zh: '卡产品（从目录选择，福利自动生成）', en: 'Card product (pick from the catalog; benefits are auto-generated)' },
   'holdings.openedOn': { zh: '开卡日期', en: 'Opened date' },
   'holdings.lastBonusLabel': { zh: '上次拿奖励日期（没有可空着，会按开卡日估算）', en: 'Last bonus date (leave blank if unknown; estimated from opened date)' },
-  'holdings.addHint': { zh: '也可以点顶部「导入备份」批量导入，或用「加载示例卡」先看看效果。', en: 'You can also bulk-import from “Import backup” at the top, or try “Load sample cards” first.' },
+  'holdings.addHint': { zh: '也可以到本页最下面点「导入备份」批量导入，或用「加载示例卡」先看看效果。', en: 'You can also bulk-import from “Import backup” at the bottom of this page, or try “Load sample cards” first.' },
   'holdings.empty': { zh: '没有符合条件的卡。', en: 'No cards match.' },
   'holdings.footNote': {
     zh: '间隔从上次拿奖励日期起算，关卡不重置时钟；没有拿奖励日期时按开卡日 + 3 个月估算，并标注“估算”。',

@@ -15,10 +15,15 @@ import type {
 } from '../types';
 import { CATALOG, PRODUCT_MAP } from '../data/catalog';
 import { CURRENCY_VALUES, EARN_RATES, TRANSFER_BONUSES, TRANSFER_RATES } from '../data/reference';
+// 首次打开的默认数据：2026-11-20 从边栏信用卡中心同步的备份（29 张卡）。
+// 由用户明确要求做到网站里，打开就有数据；注意这个仓库是公开的。
+import seedJson from '../data/seed.json';
 import { uid } from './dates';
 import { buildExportFile, mergeImport, parseImportFile, type ImportSummary } from './io';
 
 const STORAGE_KEY = 'credit-card-center-v1';
+// 用户点过「清空数据」后留下的标记：有这个标记时不再自动装入默认数据。
+const NOSEED_KEY = 'credit-card-center-v1-noseed';
 
 export interface ImportCardInput {
   bank?: string;
@@ -48,11 +53,13 @@ export function emptyState(): AppState {
 
 function loadState(): AppState {
   try {
+    const noSeed = localStorage.getItem(NOSEED_KEY) === '1';
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return emptyState();
+    // 还没存过数据，或存的是空数据（比如之前打开过但还没导入）：直接装入默认备份。
+    if (!raw) return noSeed ? emptyState() : seedState();
     const parsed = JSON.parse(raw) as Partial<AppState>;
     const base = emptyState();
-    return {
+    const state: AppState = {
       cards: Array.isArray(parsed.cards) ? parsed.cards : [],
       benefits: Array.isArray(parsed.benefits) ? parsed.benefits : [],
       uses: Array.isArray(parsed.uses) ? parsed.uses : [],
@@ -61,6 +68,19 @@ function loadState(): AppState {
       transferRates: Array.isArray(parsed.transferRates) && parsed.transferRates.length ? parsed.transferRates : base.transferRates,
       currencyValues: Array.isArray(parsed.currencyValues) && parsed.currencyValues.length ? parsed.currencyValues : base.currencyValues,
     };
+    if (!noSeed && state.cards.length === 0 && state.benefits.length === 0 && state.uses.length === 0) {
+      return seedState();
+    }
+    return state;
+  } catch {
+    return emptyState();
+  }
+}
+
+/** 默认数据：把同步来的备份文件走一遍导入流程，和用户手动导入的结果完全一致。 */
+function seedState(): AppState {
+  try {
+    return mergeImport(emptyState(), parseImportFile(JSON.stringify(seedJson))).state;
   } catch {
     return emptyState();
   }
@@ -116,6 +136,11 @@ export function useStore() {
         s.benefits.push(...benefits);
         return s;
       });
+      try {
+        localStorage.removeItem(NOSEED_KEY);
+      } catch {
+        /* ignore */
+      }
       return id;
     },
     [update],
@@ -207,6 +232,11 @@ export function useStore() {
       const parsed = parseImportFile(text);
       const { state: next, summary } = mergeImport(state, parsed);
       setState(next);
+      try {
+        localStorage.removeItem(NOSEED_KEY);
+      } catch {
+        /* ignore */
+      }
       return summary;
     },
     [state],
@@ -240,9 +270,12 @@ export function useStore() {
   }, [update]);
 
   const clearAll = useCallback(() => {
-    setState(emptyState());
+    const empty = emptyState();
+    setState(empty);
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      // 写回空数据（而不是删 key），并留下不再自动装入默认数据的标记。
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(empty));
+      localStorage.setItem(NOSEED_KEY, '1');
     } catch {
       /* ignore */
     }
