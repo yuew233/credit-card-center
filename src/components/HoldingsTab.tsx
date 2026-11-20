@@ -11,10 +11,13 @@ import { evaluateCard, fiveTwentyFour, type Eligibility } from '../lib/churn';
 import { CATALOG } from '../data/catalog';
 import { fmtShort, heldDuration } from '../lib/dates';
 import { BankBadge, Chip, Field, Light } from './shared';
+import { t, useLang } from '../lib/i18n';
 
 type EligibilityFilter = 'all' | 'eligible' | 'not_eligible';
 
 function CardRow({ card, eligibility, store }: { card: HeldCard; eligibility: Eligibility; store: Store }) {
+  const { lang } = useLang();
+  const fmtDate = (d: string | null) => (d ? fmtShort(d) : t('common.unknownDate'));
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [openedOn, setOpenedOn] = useState(card.openedOn ?? '');
@@ -29,84 +32,84 @@ function CardRow({ card, eligibility, store }: { card: HeldCard; eligibility: El
       <button type="button" className="hold-summary" onClick={() => setOpen(!open)}>
         <BankBadge bank={card.bank} />
         <span className="hold-name">{card.name}</span>
-        <span className="hold-duration">{heldDuration(card.openedOn, card.closedOn)}</span>
+        <span className="hold-duration">{heldDuration(card.openedOn, card.closedOn, undefined, lang)}</span>
         <Light color={eligibility.light} />
         <span className="hold-chevron">{open ? '▴' : '▾'}</span>
       </button>
       {open && (
         <div className="hold-detail">
           <div className="hold-status-line">
-            {card.status === 'closed' ? '已关卡' : '持有中'}
-            {card.kind === 'business' ? ' · 商业卡' : ' · 个人卡'}
+            {card.status === 'closed' ? t('holdings.closed') : t('holdings.open')}
+            {card.kind === 'business' ? ` · ${t('holdings.business')}` : ` · ${t('holdings.personal')}`}
             {eligibility.nextEligibleOn ? (
               <span>
                 {' '}
-                · 下次可拿奖励：{fmtShort(eligibility.nextEligibleOn)}
-                {eligibility.estimated ? '（估算）' : ''}
+                · {t('holdings.nextEligible', { date: fmtShort(eligibility.nextEligibleOn) })}
+                {eligibility.estimated ? t('holdings.estimated') : ''}
               </span>
             ) : null}
           </div>
           <div className="hold-rule">{eligibility.note}</div>
           <dl className="hold-dl">
             <div>
-              <dt>开卡日期</dt>
-              <dd>{fmtShort(card.openedOn)}</dd>
+              <dt>{t('holdings.openedOn')}</dt>
+              <dd>{fmtDate(card.openedOn)}</dd>
             </div>
             <div>
-              <dt>关卡日期</dt>
-              <dd>{fmtShort(card.closedOn)}</dd>
+              <dt>{t('holdings.closedOn')}</dt>
+              <dd>{fmtDate(card.closedOn)}</dd>
             </div>
             <div>
-              <dt>上次拿奖励</dt>
-              <dd>{fmtShort(card.lastBonusOn)}</dd>
+              <dt>{t('holdings.lastBonus')}</dt>
+              <dd>{fmtDate(card.lastBonusOn)}</dd>
             </div>
             <div>
-              <dt>是否拿过奖励</dt>
-              <dd>{card.bonusReceived === null ? '待确认' : card.bonusReceived ? '是' : '否'}</dd>
+              <dt>{t('holdings.bonusReceived')}</dt>
+              <dd>{card.bonusReceived === null ? t('common.unknownDate') : card.bonusReceived ? t('common.yes') : t('common.no')}</dd>
             </div>
             <div>
-              <dt>年费</dt>
-              <dd>{card.annualFee === null ? '—' : `$${card.annualFee}`}</dd>
+              <dt>{t('holdings.annualFee')}</dt>
+              <dd>{card.annualFee === null ? t('holdings.annualFeeUnknown') : `$${card.annualFee}`}</dd>
             </div>
           </dl>
           {card.note ? <div className="benefit-note">{card.note}</div> : null}
           <div className="hold-btns">
             <button type="button" className="btn" onClick={() => setEditing(!editing)}>
-              {editing ? '取消编辑' : '编辑'}
+              {editing ? t('common.cancel') : t('common.edit')}
             </button>
             <button
               type="button"
               className="btn btn-danger"
               onClick={() => {
-                if (window.confirm(`确定删除「${card.name}」吗？它的福利和已用记录也会一起删除。`)) store.deleteCard(card.id);
+                if (window.confirm(t('holdings.deleteConfirm', { name: card.name }))) store.deleteCard(card.id);
               }}
             >
-              删除
+              {t('common.delete')}
             </button>
           </div>
           {editing && (
             <div className="edit-form">
-              <Field label="开卡日期">
+              <Field label={t('holdings.openedOn')}>
                 <input type="date" value={openedOn} onChange={(e) => setOpenedOn(e.target.value)} />
               </Field>
-              <Field label="关卡日期（持有中请留空）">
+              <Field label={t('holdings.closedOnHint')}>
                 <input type="date" value={closedOn} onChange={(e) => setClosedOn(e.target.value)} />
               </Field>
-              <Field label="上次拿奖励日期">
+              <Field label={t('holdings.lastBonus')}>
                 <input type="date" value={lastBonusOn} onChange={(e) => setLastBonusOn(e.target.value)} />
               </Field>
-              <Field label="是否拿过该卡奖励">
+              <Field label={t('holdings.bonusReceived')}>
                 <select value={bonusReceived} onChange={(e) => setBonusReceived(e.target.value)}>
-                  <option value="">待确认</option>
-                  <option value="yes">是</option>
-                  <option value="no">否</option>
+                  <option value="">{t('common.unknownDate')}</option>
+                  <option value="yes">{t('common.yes')}</option>
+                  <option value="no">{t('common.no')}</option>
                 </select>
               </Field>
-              <Field label="年费（$）">
-                <input type="number" min="0" value={annualFee} onChange={(e) => setAnnualFee(e.target.value)} placeholder="未知" />
+              <Field label={t('holdings.annualFee')}>
+                <input type="number" min="0" value={annualFee} onChange={(e) => setAnnualFee(e.target.value)} placeholder={t('common.unknown')} />
               </Field>
-              <Field label="备注">
-                <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="备注" />
+              <Field label={t('common.note')}>
+                <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('common.note')} />
               </Field>
               <div className="edit-form-btns">
                 <button
@@ -125,7 +128,7 @@ function CardRow({ card, eligibility, store }: { card: HeldCard; eligibility: El
                     setEditing(false);
                   }}
                 >
-                  保存
+                  {t('common.save')}
                 </button>
               </div>
             </div>
@@ -192,26 +195,26 @@ export function HoldingsTab({ store }: { store: Store }) {
       <div className="overview">
         <div className="overview-item">
           <span className="overview-num green">{counts.eligible}</span>
-          <span className="overview-label">可申请 / 可重开</span>
+          <span className="overview-label">{t('holdings.eligible')}</span>
         </div>
         <div className="overview-item">
           <span className="overview-num red">{counts.notYet}</span>
-          <span className="overview-label">尚未可申请</span>
+          <span className="overview-label">{t('holdings.notYet')}</span>
         </div>
         <div className="overview-item">
           <span className="overview-num gray">{counts.unknown}</span>
-          <span className="overview-label">待确认</span>
+          <span className="overview-label">{t('holdings.unknown')}</span>
         </div>
         <div className="overview-item">
           <span className="overview-num">{f524}/5</span>
-          <span className="overview-label">5/24（个人卡）</span>
+          <span className="overview-label">{t('holdings.f524')}</span>
         </div>
       </div>
 
       <div className="tab-head">
         <div className="tab-filters">
-          <select value={bankFilter} onChange={(e) => setBankFilter(e.target.value)} aria-label="按银行筛选">
-            <option value="">全部银行</option>
+          <select value={bankFilter} onChange={(e) => setBankFilter(e.target.value)} aria-label={t('common.allBanks')}>
+            <option value="">{t('common.allBanks')}</option>
             {banks.map((b) => (
               <option key={b} value={b}>
                 {b}
@@ -221,9 +224,9 @@ export function HoldingsTab({ store }: { store: Store }) {
           <div className="chip-row">
             {(
               [
-                ['all', '全部'],
-                ['eligible', '可开'],
-                ['not_eligible', '不可开（含待确认）'],
+                ['all', t('holdings.all')],
+                ['eligible', t('holdings.canOpen')],
+                ['not_eligible', t('holdings.cannotOpen')],
               ] as [EligibilityFilter, string][]
             ).map(([f, label]) => (
               <Chip key={f} active={eligFilter === f} onClick={() => setEligFilter(f)}>
@@ -233,30 +236,30 @@ export function HoldingsTab({ store }: { store: Store }) {
           </div>
         </div>
         <button type="button" className="btn btn-primary" onClick={() => setShowAdd(!showAdd)}>
-          {showAdd ? '取消' : '＋ 添加卡片'}
+          {showAdd ? t('common.cancel') : t('holdings.addCard')}
         </button>
       </div>
 
       {showAdd && (
         <div className="add-card">
-          <Field label="卡产品（从目录选择，福利自动生成）">
+          <Field label={t('holdings.productLabel')}>
             <select value={productId} onChange={(e) => setProductId(e.target.value)}>
               {groupedBanks.map(([bank, products]) => (
                 <optgroup key={bank} label={bank}>
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
-                      {p.annualFee !== null ? `（年费 $${p.annualFee}）` : ''}
+                      {p.annualFee !== null ? `（${t('holdings.annualFee')} $${p.annualFee}）` : ''}
                     </option>
                   ))}
                 </optgroup>
               ))}
             </select>
           </Field>
-          <Field label="开卡日期">
+          <Field label={t('holdings.openedOn')}>
             <input type="date" value={newOpenedOn} onChange={(e) => setNewOpenedOn(e.target.value)} />
           </Field>
-          <Field label="上次拿奖励日期（没有可空着，会按开卡日估算）">
+          <Field label={t('holdings.lastBonusLabel')}>
             <input type="date" value={newLastBonusOn} onChange={(e) => setNewLastBonusOn(e.target.value)} />
           </Field>
           <button
@@ -280,14 +283,14 @@ export function HoldingsTab({ store }: { store: Store }) {
               setShowAdd(false);
             }}
           >
-            添加
+            {t('common.add')}
           </button>
-          <div className="add-card-hint">也可以点顶部「导入模板」批量导入，或用「加载示例卡」先看看效果。</div>
+          <div className="add-card-hint">{t('holdings.addHint')}</div>
         </div>
       )}
 
       {filtered.length === 0 ? (
-        <div className="empty">没有符合条件的卡。</div>
+        <div className="empty">{t('holdings.empty')}</div>
       ) : (
         <div className="hold-list">
           {filtered.map(({ card, eligibility }) => (
@@ -295,7 +298,7 @@ export function HoldingsTab({ store }: { store: Store }) {
           ))}
         </div>
       )}
-      <div className="tab-foot-note">间隔从上次拿奖励日期起算，关卡不重置时钟；没有拿奖励日期时按开卡日 + 3 个月估算，并标注“估算”。</div>
+      <div className="tab-foot-note">{t('holdings.footNote')}</div>
     </div>
   );
 }

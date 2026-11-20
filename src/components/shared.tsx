@@ -8,6 +8,13 @@ export const BANK_COLORS: Record<string, string> = {
   Barclays: '#00a0d6',
   Discover: '#e07b00',
   'Bank of America': '#c41230',
+  Robinhood: '#00a862',
+  'Wells Fargo': '#d71e2b',
+  Synchrony: '#6b4fa1',
+  PayPal: '#003087',
+  'U.S. Bank': '#0a4a8a',
+  Elan: '#5b6470',
+  Fidelity: '#2e7d32',
 };
 
 export function bankColor(bank: string): string {

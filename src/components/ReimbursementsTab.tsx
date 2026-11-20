@@ -12,6 +12,7 @@ import type { Store } from '../lib/store';
 import { evaluateBenefit, type BenefitView } from '../lib/periods';
 import { fmtShort, todayStr } from '../lib/dates';
 import { BankBadge, Chip } from './shared';
+import { t } from '../lib/i18n';
 
 type StatusFilter = 'unused' | 'used' | 'all';
 
@@ -54,13 +55,13 @@ function BenefitCard({
           <span className="period-badge">{view.periodLabel}</span>
         </div>
         <div className="benefit-actions">
-          <button type="button" className="icon-btn" title="忽略这项" onClick={() => store.updateBenefit(b.id, { ignored: true })}>
+          <button type="button" className="icon-btn" title={t('reimburse.ignore')} onClick={() => store.updateBenefit(b.id, { ignored: true })}>
             👁‍🗨
           </button>
           <button
             type="button"
             className="icon-btn"
-            title="编辑"
+            title={t('common.edit')}
             onClick={() => {
               setEditing(!editing);
             }}
@@ -72,14 +73,14 @@ function BenefitCard({
 
       {view.status === 'not_started' ? (
         <div className="benefit-remaining not-started">
-          {view.startsOn ? `第二年起 · ${fmtShort(view.startsOn)} 开始` : '第二年起（请填写开卡日期）'}
+          {view.startsOn ? t('reimburse.notStarted', { date: fmtShort(view.startsOn) }) : t('reimburse.notStartedNoDate')}
         </div>
       ) : (
         <>
           <div className="benefit-remaining">
-            还剩 {fmtAmount(b, view.remaining)}
-            {view.periodEnd ? <span className="benefit-until"> · 截至 {fmtShort(view.periodEnd)}</span> : null}
-            {b.unit === '积分' ? <span className="benefit-until"> · 不计入美元总额</span> : null}
+            {t('reimburse.remaining', { amount: fmtAmount(b, view.remaining) })}
+            {view.periodEnd ? <span className="benefit-until"> · {t('reimburse.until', { date: fmtShort(view.periodEnd) })}</span> : null}
+            {b.unit === '积分' ? <span className="benefit-until"> · {t('reimburse.notCounted')}</span> : null}
           </div>
           <div className="progress">
             <div className="progress-fill" style={{ width: `${pct}%` }} />
@@ -90,7 +91,7 @@ function BenefitCard({
 
       {b.note ? <div className="benefit-note">{b.note}</div> : null}
       <div className="benefit-meta">
-        {cardName} · 本期已用 {fmtAmount(b, view.used)}
+        {cardName} · {t('reimburse.usedThisPeriod', { amount: fmtAmount(b, view.used) })}
         {uses.length > 0 ? (
           <span className="use-list">
             {uses.slice(-3).map((u: BenefitUse) => (
@@ -99,7 +100,7 @@ function BenefitCard({
                 <button
                   type="button"
                   className="use-del"
-                  title="删除这笔记录"
+                  title={t('common.delete')}
                   onClick={() => store.deleteUse(u.id)}
                 >
                   ×
@@ -113,14 +114,14 @@ function BenefitCard({
       {view.status !== 'not_started' && view.status !== 'used' && (
         <div className="benefit-ops">
           <button type="button" className="btn btn-primary" onClick={markUsed}>
-            标记已用
+            {t('reimburse.markUsed')}
           </button>
           <span className="partial">
             <input
               type="number"
               min="0"
               step="1"
-              placeholder="记一笔金额"
+              placeholder={t('reimburse.logAmountPh')}
               value={partial}
               onChange={(e) => setPartial(e.target.value)}
             />
@@ -133,7 +134,7 @@ function BenefitCard({
                 setPartial('');
               }}
             >
-              记录
+              {t('reimburse.log')}
             </button>
           </span>
         </div>
@@ -141,15 +142,15 @@ function BenefitCard({
 
       {editing && (
         <div className="edit-form">
-          <input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="福利名称" />
+          <input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={t('reimburse.editNamePh')} />
           <input
             type="number"
             min="0"
             value={editAmount}
             onChange={(e) => setEditAmount(e.target.value)}
-            placeholder="额度"
+            placeholder={t('reimburse.editAmountPh')}
           />
-          <input value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder="说明" />
+          <input value={editNote} onChange={(e) => setEditNote(e.target.value)} placeholder={t('reimburse.editNotePh')} />
           <div className="edit-form-btns">
             <button
               type="button"
@@ -159,19 +160,19 @@ function BenefitCard({
                 setEditing(false);
               }}
             >
-              保存
+              {t('common.save')}
             </button>
             <button type="button" className="btn" onClick={() => setEditing(false)}>
-              取消
+              {t('common.cancel')}
             </button>
             <button
               type="button"
               className="btn btn-danger"
               onClick={() => {
-                if (window.confirm(`确定删除「${b.name}」吗？`)) store.deleteBenefit(b.id);
+                if (window.confirm(t('reimburse.deleteConfirm', { name: b.name }))) store.deleteBenefit(b.id);
               }}
             >
-              删除此福利
+              {t('reimburse.deleteBenefit')}
             </button>
           </div>
         </div>
@@ -203,7 +204,7 @@ function DoorDashCard({
         <div className="benefit-title">
           <BankBadge bank={bank} size="xs" />
           <span className="benefit-name">DoorDash</span>
-          <span className="period-badge">自然月</span>
+          <span className="period-badge">{t('period.monthly')}</span>
         </div>
         <div className="benefit-actions">
           {views.map((v) => (
@@ -211,7 +212,7 @@ function DoorDashCard({
               key={v.benefit.id}
               type="button"
               className="icon-btn"
-              title={`忽略 ${v.benefit.name}`}
+              title={`${t('reimburse.ignore')} ${v.benefit.name}`}
               onClick={() => store.updateBenefit(v.benefit.id, { ignored: true })}
             >
               👁‍🗨
@@ -220,14 +221,14 @@ function DoorDashCard({
         </div>
       </div>
       <div className="benefit-remaining">
-        还剩 ${remaining.toLocaleString()}
-        {periodEnd ? <span className="benefit-until"> · 截至 {fmtShort(periodEnd)}</span> : null}
+        {t('reimburse.remaining', { amount: `$${remaining.toLocaleString()}` })}
+        {periodEnd ? <span className="benefit-until"> · {t('reimburse.until', { date: fmtShort(periodEnd) })}</span> : null}
       </div>
       <div className="progress">
         <div className="progress-fill" style={{ width: `${pct}%` }} />
         <span className="progress-dot" style={{ left: `${pct}%` }} />
       </div>
-      <div className="benefit-note">每月（自然月）额度；自提订单有最低消费门槛。</div>
+      <div className="benefit-note">{t('reimburse.doordashNote')}</div>
       <div className="benefit-meta">{cardName}</div>
       <div className="doordash-btns">
         {views.map((v) => (
@@ -239,7 +240,7 @@ function DoorDashCard({
             onClick={() => store.logUse(v.benefit.id, v.remaining, today)}
           >
             {v.benefit.subLabel ?? v.benefit.name} ${v.remaining.toLocaleString()}
-            {v.status === 'used' ? '（已用）' : ''}
+            {v.status === 'used' ? t('reimburse.doordashUsed') : ''}
           </button>
         ))}
       </div>
@@ -305,12 +306,12 @@ export function ReimbursementsTab({ store }: { store: Store }) {
     <div>
       <div className="tab-head">
         <div>
-          <div className="tab-title">本期未用总额 ${unusedTotal.toLocaleString()}</div>
-          <div className="tab-sub">只统计最近的周期，过期的不管；免房晚不计入美元总额。</div>
+          <div className="tab-title">{t('reimburse.total', { total: unusedTotal.toLocaleString() })}</div>
+          <div className="tab-sub">{t('reimburse.totalNote')}</div>
         </div>
         <div className="tab-filters">
-          <select value={bankFilter} onChange={(e) => setBankFilter(e.target.value)} aria-label="按银行筛选">
-            <option value="">全部银行</option>
+          <select value={bankFilter} onChange={(e) => setBankFilter(e.target.value)} aria-label={t('common.allBanks')}>
+            <option value="">{t('common.allBanks')}</option>
             {banks.map((b) => (
               <option key={b} value={b}>
                 {b}
@@ -320,7 +321,7 @@ export function ReimbursementsTab({ store }: { store: Store }) {
           <div className="chip-row">
             {(['unused', 'used', 'all'] as StatusFilter[]).map((f) => (
               <Chip key={f} active={statusFilter === f} onClick={() => setStatusFilter(f)}>
-                {f === 'unused' ? '未用' : f === 'used' ? '已用' : '全部'}
+                {f === 'unused' ? t('reimburse.unused') : f === 'used' ? t('reimburse.used') : t('reimburse.all')}
               </Chip>
             ))}
           </div>
@@ -329,10 +330,10 @@ export function ReimbursementsTab({ store }: { store: Store }) {
 
       {store.state.cards.length === 0 ? (
         <div className="empty">
-          还没有卡。点右上角「加载示例卡」看看效果，或「导入模板」导入自己的卡。
+          {t('reimburse.noCards')}
         </div>
       ) : filtered.length === 0 && groups.size === 0 ? (
-        <div className="empty">当前筛选下没有福利。</div>
+        <div className="empty">{t('reimburse.noBenefits')}</div>
       ) : (
         <div className="benefit-list">
           {[...groups.entries()].map(([cardId, items]) => {
@@ -356,7 +357,7 @@ export function ReimbursementsTab({ store }: { store: Store }) {
       {ignored.length > 0 && (
         <div className="ignored-section">
           <button type="button" className="ignored-toggle" onClick={() => setShowIgnored(!showIgnored)}>
-            已忽略（{ignored.length}） {showIgnored ? '▴' : '▾'}
+            {t('reimburse.ignored', { n: ignored.length })} {showIgnored ? '▴' : '▾'}
           </button>
           {showIgnored && (
             <div className="benefit-list">
@@ -368,7 +369,7 @@ export function ReimbursementsTab({ store }: { store: Store }) {
                       <span className="benefit-name">{view.benefit.name}</span>
                     </div>
                     <button type="button" className="btn" onClick={() => store.updateBenefit(view.benefit.id, { ignored: false })}>
-                      恢复
+                      {t('reimburse.restore')}
                     </button>
                   </div>
                   <div className="benefit-note">{card?.name}</div>

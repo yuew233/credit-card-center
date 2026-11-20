@@ -2,26 +2,30 @@
 // - 默认按伙伴分组（每个伙伴一行，列出所有能转的银行和比例），可切换按银行分组
 // - 每行只显示核心三样：比例、进行中奖励的绿色 +X% 徽章、网上常推荐路线的 ★
 // - 美元价值、推荐理由、到账时间、最低转分量收在行内展开详情里
-// - 「当前转分奖励」每条一行，过期自动进「最近结束」
+// - 「当前转分奖励」按银行排序（Chase → Capital One → AmEx → Citi → Marriott），同银行按截止日期；过期自动进「最近结束」
+// - 每组只展开 ★ 路线和有奖励的前 3 条，其余收进「展开其余 N 条」（两组视图都一样）
 // - 货币典型价值一行小字汇总；换算器默认收起
 // - 转分不可逆，页面顶部有提示
 
 import { useMemo, useState } from 'react';
-import type { TransferRate } from '../types';
+import type { TransferBonus, TransferRate } from '../types';
 import type { Store } from '../lib/store';
 import { todayStr } from '../lib/dates';
+import { t } from '../lib/i18n';
 import { Chip } from './shared';
 
 type GroupMode = 'partner' | 'bank';
+
+const BANK_ORDER = ['Chase UR', 'Capital One', 'AmEx MR', 'Citi ThankYou', 'Marriott Bonvoy'];
 
 function ratioText(r: TransferRate): string {
   return `${r.ratioFrom}:${r.ratioTo}`;
 }
 
 function usdText(r: TransferRate): string {
-  if (r.valueCents !== null && r.valueCents !== undefined) return `约 $${((r.valueCents * r.ratioTo) / 100).toFixed(2)} / 1,000 分`;
+  if (r.valueCents !== null && r.valueCents !== undefined) return `≈ $${((r.valueCents * r.ratioTo) / 100).toFixed(2)} / 1,000 ${t('transfers.points')}`;
   if (r.valueLow !== null && r.valueLow !== undefined && r.valueHigh !== null && r.valueHigh !== undefined)
-    return `${r.valueLow}–${r.valueHigh} 美分/点`;
+    return `${r.valueLow}–${r.valueHigh} ${t('transfers.centsPerPt')}`;
   return '—';
 }
 
@@ -51,12 +55,12 @@ function RateRow({
         <span className="rate-ratio">
           {ratioText(rate)}
           {bonusPct !== null ? (
-            <span className="bonus-badge" title={`当前奖励 +${bonusPct}%，加成后约 ${rate.ratioFrom}:${effectiveTo}`}>
+            <span className="bonus-badge" title={t('transfers.bonusTitle', { pct: bonusPct, to: effectiveTo })}>
               +{bonusPct}%
             </span>
           ) : null}
         </span>
-        {rate.star ? <span className="rate-star" title="网上常推荐">★</span> : null}
+        {rate.star ? <span className="rate-star" title={t('transfers.starTitle')}>★</span> : null}
         <span className="rate-usd">{usdText(rate)}</span>
         <span className="hold-chevron">{open ? '▴' : '▾'}</span>
       </button>
@@ -64,23 +68,23 @@ function RateRow({
         <div className="rate-detail">
           {rate.star && rate.starReason ? <div className="rate-star-reason">★ {rate.starReason}</div> : null}
           <div className="rate-detail-grid">
-            <span>比例：{ratioText(rate)}</span>
-            {bonusPct !== null ? <span>加成后：{rate.ratioFrom}:{effectiveTo}</span> : null}
-            <span>美元价值：{usdText(rate)}</span>
-            {rate.minTransfer ? <span>最低转分：{rate.minTransfer.toLocaleString()}</span> : null}
-            {rate.arrival ? <span>到账：{rate.arrival}</span> : null}
-            <span>核实：{rate.verifiedOn}</span>
+            <span>{t('transfers.ratio', { ratio: ratioText(rate) })}</span>
+            {bonusPct !== null ? <span>{t('transfers.ratioAfter', { ratio: `${rate.ratioFrom}:${effectiveTo}` })}</span> : null}
+            <span>{t('transfers.usdValue', { value: usdText(rate) })}</span>
+            {rate.minTransfer ? <span>{t('transfers.minTransfer', { n: rate.minTransfer.toLocaleString() })}</span> : null}
+            {rate.arrival ? <span>{t('transfers.arrival', { text: rate.arrival })}</span> : null}
+            <span>{t('transfers.verified', { date: rate.verifiedOn })}</span>
           </div>
           {rate.note ? <div className="benefit-note">{rate.note}</div> : null}
           <div className="hold-btns">
             <button type="button" className="btn" onClick={() => setEditing(!editing)}>
-              {editing ? '取消编辑' : '编辑这条'}
+              {editing ? t('transfers.cancelEdit') : t('transfers.edit')}
             </button>
           </div>
           {editing && (
             <div className="edit-form">
               <label className="field">
-                <span className="field-label">比例（转出 : 到账）</span>
+                <span className="field-label">{t('transfers.editRatio')}</span>
                 <span className="ratio-edit">
                   <input type="number" step="any" min="0" value={ratioFrom} onChange={(e) => setRatioFrom(e.target.value)} />
                   :
@@ -88,15 +92,15 @@ function RateRow({
                 </span>
               </label>
               <label className="field">
-                <span className="field-label">网上常推荐（★）</span>
+                <span className="field-label">{t('transfers.editStar')}</span>
                 <input type="checkbox" checked={star} onChange={(e) => setStar(e.target.checked)} />
               </label>
               <label className="field">
-                <span className="field-label">推荐理由</span>
+                <span className="field-label">{t('transfers.editStarReason')}</span>
                 <input value={starReason} onChange={(e) => setStarReason(e.target.value)} />
               </label>
               <label className="field">
-                <span className="field-label">备注</span>
+                <span className="field-label">{t('common.note')}</span>
                 <input value={note} onChange={(e) => setNote(e.target.value)} />
               </label>
               <div className="edit-form-btns">
@@ -114,13 +118,65 @@ function RateRow({
                     setEditing(false);
                   }}
                 >
-                  保存
+                  {t('common.save')}
                 </button>
               </div>
             </div>
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function RateGroup({
+  label,
+  kind,
+  rates,
+  bonusFor,
+  store,
+}: {
+  label: string;
+  kind: string;
+  rates: TransferRate[];
+  bonusFor: (currency: string, partner: string) => TransferBonus | null;
+  store: Store;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  // 只展开 ★ 路线 + 有奖励的前 3 条（按奖励 % 降序、截止日期升序），其余收起
+  const bonusRows = rates
+    .map((r) => ({ rate: r, bonus: bonusFor(r.currency, r.partner) }))
+    .filter((x): x is { rate: TransferRate; bonus: TransferBonus } => x.bonus !== null)
+    .sort((a, b) => b.bonus.bonusPct - a.bonus.bonusPct || a.bonus.endsOn.localeCompare(b.bonus.endsOn))
+    .slice(0, 3);
+  const shownSet = new Set<TransferRate>([...rates.filter((r) => r.star), ...bonusRows.map((x) => x.rate)]);
+  const shown = rates.filter((r) => shownSet.has(r));
+  const hidden = rates.filter((r) => !shownSet.has(r));
+  const visible = expanded ? rates : shown;
+
+  return (
+    <div className="partner-group">
+      <div className="partner-group-head">
+        <span className="partner-group-name">{label}</span>
+        {kind ? <span className="period-badge">{kind === 'airline' ? t('transfers.airline') : t('transfers.hotel')}</span> : null}
+        <span className="tab-sub">{t('transfers.sources', { n: rates.length })}</span>
+      </div>
+      <div className="rate-list">
+        {visible.map((r) => (
+          <RateRow
+            key={`${r.currency}-${r.partner}`}
+            rate={r}
+            bonusPct={bonusFor(r.currency, r.partner)?.bonusPct ?? null}
+            store={store}
+          />
+        ))}
+      </div>
+      {hidden.length > 0 ? (
+        <button type="button" className="expand-toggle" onClick={() => setExpanded(!expanded)}>
+          {expanded ? t('transfers.hideRest') : t('transfers.showRest', { n: hidden.length })} {expanded ? '▴' : '▾'}
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -137,10 +193,20 @@ export function TransfersTab({ store }: { store: Store }) {
   const bonuses = store.state.transferBonuses;
   const activeBonuses = bonuses.filter((b) => b.endsOn >= today);
   const endedBonuses = bonuses.filter((b) => b.endsOn < today);
+  const sortedActiveBonuses = useMemo(
+    () =>
+      [...activeBonuses].sort((a, b) => {
+        const ai = BANK_ORDER.indexOf(a.currency);
+        const bi = BANK_ORDER.indexOf(b.currency);
+        if (ai !== bi) return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+        return a.endsOn.localeCompare(b.endsOn);
+      }),
+    [activeBonuses],
+  );
 
-  const bonusFor = (currency: string, partner: string): number | null => {
+  const bonusFor = (currency: string, partner: string): TransferBonus | null => {
     const b = activeBonuses.find((x) => x.currency === currency && x.partner === partner);
-    return b ? b.bonusPct : null;
+    return b ?? null;
   };
 
   const grouped = useMemo(() => {
@@ -159,7 +225,7 @@ export function TransfersTab({ store }: { store: Store }) {
     [store.state.transferRates, calcCurrency],
   );
   const calcRate = calcPartners.find((r) => r.partner === calcPartner) ?? calcPartners[0];
-  const calcBonus = calcRate ? bonusFor(calcRate.currency, calcRate.partner) : null;
+  const calcBonus = calcRate ? bonusFor(calcRate.currency, calcRate.partner)?.bonusPct ?? null : null;
   const calcPoints = Number(calcAmount) || 0;
   const calcOut = calcRate ? Math.floor((calcPoints * calcRate.ratioTo) / calcRate.ratioFrom) : 0;
   const calcOutBonus = calcBonus !== null ? Math.floor((calcOut * (100 + calcBonus)) / 100) : calcOut;
@@ -175,51 +241,54 @@ export function TransfersTab({ store }: { store: Store }) {
     [store.state.transferRates],
   );
 
+  const valuesVerified = useMemo(
+    () => store.state.currencyValues.map((v) => v.verifiedOn).sort().at(-1) ?? '',
+    [store.state.currencyValues],
+  );
+
   return (
     <div>
-      <div className="transfer-warn">⚠️ 转分不可逆，转出前请确认目标账户与姓名一致。</div>
+      <div className="transfer-warn">{t('transfers.warn')}</div>
 
       <div className="value-line">
-        积分典型价值（TPG 2026 年 11 月估值，非保证价）：{' '}
-        {store.state.currencyValues.map((v) => `${v.currency} ${v.valueCents}¢`).join(' · ')}
-        <span className="tab-sub"> · 核实于 2026-11-18</span>
+        {t('transfers.valueLine')} {store.state.currencyValues.map((v) => `${v.currency} ${v.valueCents}¢`).join(' · ')}
+        {valuesVerified ? <span className="tab-sub"> · {t('transfers.verifiedOn', { date: valuesVerified })}</span> : null}
       </div>
 
       <div className="tab-head">
         <div className="chip-row">
           <Chip active={mode === 'partner'} onClick={() => setMode('partner')}>
-            按伙伴分组
+            {t('transfers.byPartner')}
           </Chip>
           <Chip active={mode === 'bank'} onClick={() => setMode('bank')}>
-            按银行分组
+            {t('transfers.byBank')}
           </Chip>
         </div>
-        <div className="tab-sub">{store.state.transferRates.length} 条比例 · ★ 为网上常推荐路线</div>
+        <div className="tab-sub">
+          {t('transfers.count', { n: store.state.transferRates.length })}
+        </div>
       </div>
 
       <div className="bonus-list">
-        <div className="bonus-list-title">当前转分奖励</div>
-        {activeBonuses.length === 0 ? (
-          <div className="tab-sub">暂无进行中的奖励。</div>
+        <div className="bonus-list-title">{t('transfers.bonuses')}</div>
+        {sortedActiveBonuses.length === 0 ? (
+          <div className="tab-sub">{t('transfers.noBonuses')}</div>
         ) : (
-          activeBonuses
-            .slice()
-            .sort((a, b) => a.endsOn.localeCompare(b.endsOn))
-            .map((b) => (
-              <div key={`${b.currency}-${b.partner}`} className="bonus-line">
-                <span>
-                  {b.currency} → {b.partner}
-                </span>
-                <span className="bonus-badge">+{b.bonusPct}%</span>
-                <span className="tab-sub">截至 {b.endsOn}</span>
-                {b.note ? <span className="tab-sub">{b.note}</span> : null}
-              </div>
-            ))
+          sortedActiveBonuses.map((b) => (
+            <div key={`${b.currency}-${b.partner}`} className="bonus-line">
+              <span>
+                {b.currency} → {b.partner}
+              </span>
+              <span className="bonus-badge">+{b.bonusPct}%</span>
+              <span className="tab-sub">{t('transfers.until', { date: b.endsOn })}</span>
+              {b.note ? <span className="tab-sub">{b.note}</span> : null}
+            </div>
+          ))
         )}
         {endedBonuses.length > 0 && (
           <div>
             <button type="button" className="ignored-toggle" onClick={() => setShowEnded(!showEnded)}>
-              最近结束（{endedBonuses.length}） {showEnded ? '▴' : '▾'}
+              {t('transfers.ended', { n: endedBonuses.length })} {showEnded ? '▴' : '▾'}
             </button>
             {showEnded &&
               endedBonuses.map((b) => (
@@ -228,7 +297,7 @@ export function TransfersTab({ store }: { store: Store }) {
                     {b.currency} → {b.partner}
                   </span>
                   <span className="bonus-badge ended-badge">+{b.bonusPct}%</span>
-                  <span className="tab-sub">已于 {b.endsOn} 结束</span>
+                  <span className="tab-sub">{t('transfers.endedOn', { date: b.endsOn })}</span>
                 </div>
               ))}
           </div>
@@ -237,29 +306,18 @@ export function TransfersTab({ store }: { store: Store }) {
 
       <div className="partner-groups">
         {grouped.map((g) => (
-          <div key={g.label} className="partner-group">
-            <div className="partner-group-head">
-              <span className="partner-group-name">{g.label}</span>
-              {g.kind ? <span className="period-badge">{g.kind === 'airline' ? '航司' : '酒店'}</span> : null}
-              <span className="tab-sub">{g.rates.length} 个来源</span>
-            </div>
-            <div className="rate-list">
-              {g.rates.map((r) => (
-                <RateRow key={`${r.currency}-${r.partner}`} rate={r} bonusPct={bonusFor(r.currency, r.partner)} store={store} />
-              ))}
-            </div>
-          </div>
+          <RateGroup key={g.label} label={g.label} kind={g.kind} rates={g.rates} bonusFor={bonusFor} store={store} />
         ))}
       </div>
 
       <div className="calc-section">
         <button type="button" className="ignored-toggle" onClick={() => setShowCalc(!showCalc)}>
-          换算器 {showCalc ? '▴' : '▾'}
+          {t('transfers.calc')} {showCalc ? '▴' : '▾'}
         </button>
         {showCalc && (
           <div className="calc-body">
             <label className="field">
-              <span className="field-label">积分</span>
+              <span className="field-label">{t('transfers.calcCurrency')}</span>
               <select value={calcCurrency} onChange={(e) => { setCalcCurrency(e.target.value); setCalcPartner(''); }}>
                 {currencies.map((c) => (
                   <option key={c} value={c}>
@@ -269,7 +327,7 @@ export function TransfersTab({ store }: { store: Store }) {
               </select>
             </label>
             <label className="field">
-              <span className="field-label">转到</span>
+              <span className="field-label">{t('transfers.calcPartner')}</span>
               <select value={calcRate?.partner ?? ''} onChange={(e) => setCalcPartner(e.target.value)}>
                 {calcPartners.map((r) => (
                   <option key={r.partner} value={r.partner}>
@@ -279,14 +337,17 @@ export function TransfersTab({ store }: { store: Store }) {
               </select>
             </label>
             <label className="field">
-              <span className="field-label">转出点数</span>
+              <span className="field-label">{t('transfers.calcAmount')}</span>
               <input type="number" min="0" value={calcAmount} onChange={(e) => setCalcAmount(e.target.value)} />
             </label>
             {calcRate && (
               <div className="calc-result">
-                到账约 <b>{calcOutBonus.toLocaleString()}</b> {calcRate.partner.includes('Bonvoy') || calcRate.partner.includes('Rewards') || calcRate.partner.includes('Privileges') ? '积分' : '里程'}
-                {calcBonus !== null ? <span className="bonus-badge">+{calcBonus}% 已计入</span> : null}
-                {calcUsd !== '—' ? <span> · 约 ${calcUsd}</span> : null}
+                {t('transfers.calcOut')} <b>{calcOutBonus.toLocaleString()}</b>{' '}
+                {calcRate.partner.includes('Bonvoy') || calcRate.partner.includes('Rewards') || calcRate.partner.includes('Privileges')
+                  ? t('transfers.points')
+                  : t('transfers.miles')}
+                {calcBonus !== null ? <span className="bonus-badge">{t('transfers.calcBonusIn', { pct: calcBonus })}</span> : null}
+                {calcUsd !== '—' ? <span> · ≈ ${calcUsd}</span> : null}
               </div>
             )}
           </div>
