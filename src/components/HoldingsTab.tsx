@@ -139,7 +139,19 @@ function CardRow({ card, eligibility, store }: { card: HeldCard; eligibility: El
   );
 }
 
-export function HoldingsTab({ store }: { store: Store }) {
+export function HoldingsTab({
+  store,
+  onImportClick,
+  onLoadSample,
+  onExport,
+  onClear,
+}: {
+  store: Store;
+  onImportClick: () => void;
+  onLoadSample: () => void;
+  onExport: () => void;
+  onClear: () => void;
+}) {
   const [bankFilter, setBankFilter] = useState('');
   const [eligFilter, setEligFilter] = useState<EligibilityFilter>('all');
   const [productId, setProductId] = useState(CATALOG[0]?.id ?? '');
@@ -299,6 +311,24 @@ export function HoldingsTab({ store }: { store: Store }) {
         </div>
       )}
       <div className="tab-foot-note">{t('holdings.footNote')}</div>
+
+      <div className="data-manage">
+        <div className="data-btns">
+          <button type="button" className="btn" onClick={onImportClick}>
+            {t('btn.import')}
+          </button>
+          <button type="button" className="btn" onClick={onLoadSample}>
+            {t('btn.sample')}
+          </button>
+          <button type="button" className="btn" onClick={onExport}>
+            {t('btn.export')}
+          </button>
+          <button type="button" className="btn" onClick={onClear}>
+            {t('btn.clear')}
+          </button>
+        </div>
+        <div className="app-version">{t('app.version')}</div>
+      </div>
     </div>
   );
 }
