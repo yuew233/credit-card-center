@@ -321,6 +321,8 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 .earn-reason { color: var(--muted); font-size: 12px; margin-top: 4px; }
 
 .app-footer { margin-top: 24px; color: var(--muted); font-size: 11px; text-align: center; }
+.data-manage { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+.app-version { color: var(--muted); font-size: 11px; text-align: center; }
 
 /* ---- 语言切换（右上角分段开关，参考打卡应用） ---- */
 .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }

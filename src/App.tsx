@@ -73,9 +73,26 @@ export default function App() {
     }
   };
 
+  const clearAllData = () => {
+    if (window.confirm(t('confirm.clear'))) {
+      store.clearAll();
+      setMsg(t('msg.cleared'));
+    }
+  };
+
   return (
     <LangContext.Provider value={ctx}>
       <div className="app">
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          hidden
+          onChange={(e) => {
+            void onFile(e.target.files?.[0]);
+            e.target.value = '';
+          }}
+        />
         <header className="app-header">
           <div>
             <h1>{t('app.title')}</h1>
@@ -83,39 +100,6 @@ export default function App() {
           </div>
           <div className="header-right">
             <LangToggle />
-            <div className="data-btns">
-              <input
-                ref={fileRef}
-                type="file"
-                accept="application/json,.json"
-                hidden
-                onChange={(e) => {
-                  void onFile(e.target.files?.[0]);
-                  e.target.value = '';
-                }}
-              />
-              <button type="button" className="btn" onClick={() => fileRef.current?.click()}>
-                {t('btn.import')}
-              </button>
-              <button type="button" className="btn" onClick={loadSample}>
-                {t('btn.sample')}
-              </button>
-              <button type="button" className="btn" onClick={() => store.exportJson()}>
-                {t('btn.export')}
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  if (window.confirm(t('confirm.clear'))) {
-                    store.clearAll();
-                    setMsg(t('msg.cleared'));
-                  }
-                }}
-              >
-                {t('btn.clear')}
-              </button>
-            </div>
           </div>
         </header>
 
@@ -150,7 +134,15 @@ export default function App() {
 
         <main className="tab-body">
           {tab === 'reimburse' && <ReimbursementsTab store={store} />}
-          {tab === 'holdings' && <HoldingsTab store={store} />}
+          {tab === 'holdings' && (
+            <HoldingsTab
+              store={store}
+              onImportClick={() => fileRef.current?.click()}
+              onLoadSample={loadSample}
+              onExport={() => store.exportJson()}
+              onClear={clearAllData}
+            />
+          )}
           {tab === 'transfers' && <TransfersTab store={store} />}
           {tab === 'earn' && <EarnTab store={store} />}
         </main>
