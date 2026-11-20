@@ -399,7 +399,7 @@ function normalizeCardName(name: string): string {
   return name.replace(/\s*[（(][^)）]*[)）]\s*$/, '').trim().toLowerCase();
 }
 
-function resolveProductId(c: NormalizedCard): string | null {
+export function resolveProductId(c: NormalizedCard): string | null {
   if (c.productId && PRODUCT_MAP.has(c.productId)) return c.productId;
   const byName = [...PRODUCT_MAP.values()].find((p) => p.name === c.name && (!c.bank || p.bank === c.bank));
   if (byName) return byName.id;

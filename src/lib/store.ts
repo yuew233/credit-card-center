@@ -19,7 +19,7 @@ import { CURRENCY_VALUES, EARN_RATES, TRANSFER_BONUSES, TRANSFER_RATES } from '.
 // 由用户明确要求做到网站里，打开就有数据；注意这个仓库是公开的。
 import seedJson from '../data/seed.json';
 import { uid } from './dates';
-import { buildExportFile, mergeImport, parseImportFile, type ImportSummary } from './io';
+import { buildExportFile, mergeImport, parseImportFile, resolveProductId, type ImportSummary, type NormalizedCard } from './io';
 
 const STORAGE_KEY = 'credit-card-center-v1';
 // 用户点过「清空数据」后留下的标记：有这个标记时不再自动装入默认数据。
@@ -51,6 +51,23 @@ export function emptyState(): AppState {
   };
 }
 
+/** 迁移：给 productId 为空的已存卡补一次产品匹配（老版本存下的数据当时匹配不上）。
+ *  只补空的，已有的不动；实在匹配不上的继续留空（显示待确认）。返回是否改过。 */
+export function migrateProductIds(state: AppState): boolean {
+  let changed = false;
+  for (const card of state.cards) {
+    if (!card.productId) {
+      // resolveProductId 只读 productId / bank / name 三个字段。
+      const pid = resolveProductId({ productId: null, bank: card.bank, name: card.name } as NormalizedCard);
+      if (pid) {
+        card.productId = pid;
+        changed = true;
+      }
+    }
+  }
+  return changed;
+}
+
 function loadState(): AppState {
   try {
     const noSeed = localStorage.getItem(NOSEED_KEY) === '1';
@@ -71,6 +88,9 @@ function loadState(): AppState {
     if (!noSeed && state.cards.length === 0 && state.benefits.length === 0 && state.uses.length === 0) {
       return seedState();
     }
+    // 迁移：老版本存下的卡可能 productId 为空（当时名字匹配不上），现在匹配规则修好了，
+    // 打开时自动补一次；已有 productId 的卡不动。改动由 useStore 的 effect 写回 localStorage。
+    migrateProductIds(state);
     return state;
   } catch {
     return emptyState();
