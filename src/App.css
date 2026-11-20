@@ -321,3 +321,24 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 .earn-reason { color: var(--muted); font-size: 12px; margin-top: 4px; }
 
 .app-footer { margin-top: 24px; color: var(--muted); font-size: 11px; text-align: center; }
+
+/* ---- 语言切换（右上角分段开关，参考打卡应用） ---- */
+.header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.lang-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; background: var(--card); }
+.lang-toggle button { border: none; background: none; padding: 4px 12px; font-size: 12px; cursor: pointer; color: var(--muted); }
+.lang-toggle button.active { background: var(--navy); color: #fff; font-weight: 600; }
+
+/* ---- 刷哪张：我的最佳 / 市场最佳 / Q4 标记 / 折叠 ---- */
+.earn-view-toggle { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.my-best-badge { font-size: 11px; font-weight: 700; color: #fff; background: #2563eb; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
+.market-best-badge { font-size: 11px; font-weight: 700; color: #7a5c00; background: #fef3c7; border: 1px solid #f5d76e; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
+.market-rank-badge { font-size: 11px; color: #7a5c00; background: #fef9e7; border: 1px solid #f5d76e; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
+.market-row { border: 1px solid #f5d76e; border-radius: 10px; padding: 8px 10px; margin-top: 6px; background: #fffdf5; }
+.market-row .earn-row-top { flex-wrap: wrap; }
+.q4-tag { font-size: 11px; font-weight: 700; color: #fff; background: var(--navy); border-radius: 4px; padding: 1px 5px; white-space: nowrap; }
+.expand-toggle { display: block; width: 100%; text-align: left; background: none; border: none; color: var(--navy); font-size: 12px; padding: 6px 0; cursor: pointer; }
+.expand-toggle:hover { text-decoration: underline; }
+.earn-market { border-top: 1px dashed var(--border); margin-top: 8px; padding-top: 4px; }
+.earn-gap { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.market-detail { color: var(--muted); font-size: 12px; margin-top: 6px; border-top: 1px dashed var(--border); padding-top: 6px; }
+.market-source { margin-top: 2px; font-size: 11px; }

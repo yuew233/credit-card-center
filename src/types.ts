@@ -90,7 +90,7 @@ export interface EarnRate {
   cardName: string;
   category: string;
   categoryLabel: string;
-  rank: number; // 0 = 未持有、可考虑；1 = 首选；2+ = 次选
+  rank: number; // 0 = 未持有、可考虑；1 = 首选；2+ = 次选（市面上的卡 rank 固定为 0，用 marketRank 排位）
   rateText: string;
   reason: string;
   note: string;
@@ -98,6 +98,10 @@ export interface EarnRate {
   quarterly: boolean; // 季度轮换类别
   validUntil: string | null;
   verifiedOn: string;
+  source: 'mine' | 'market'; // mine = 自己持有的卡，market = 市面上的卡（未持有）
+  marketRank: number | null; // 市面上的卡在同类里的排位（1 = 市场最佳）
+  feeText: string; // 市面上的卡：年费 / 上限等一句话说明
+  sourceNote: string; // 市面上的卡：费率来源
 }
 
 export interface TransferBonus {
