@@ -187,6 +187,25 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
   white-space: nowrap;
 }
 .bank-badge.xs { font-size: 10px; padding: 1px 5px; }
+.bank-logo { height: 14px; width: auto; max-width: 72px; object-fit: contain; object-position: left center; display: inline-block; vertical-align: middle; }
+.bank-logo.xs { height: 12px; max-width: 56px; }
+
+/* ---- 报销：银行分组 ---- */
+.bank-groups { display: flex; flex-direction: column; gap: 16px; }
+.bank-group-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.bank-group-name { font-weight: 700; font-size: 14px; }
+.bank-group-total { margin-left: auto; font-size: 12px; color: var(--muted); font-weight: 700; }
+.card-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.card-group-head { font-size: 12px; font-weight: 700; color: var(--muted); }
+.doordash-btn.is-used { opacity: 0.6; }
+
+/* ---- 持卡：持有中 / 已关卡 + 银行分组 ---- */
+.hold-section { margin-bottom: 14px; }
+.hold-section-head { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+.hold-bank-group { margin-bottom: 10px; }
+.hold-bank-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.hold-bank-name { font-weight: 700; font-size: 12px; }
+.hold-bank-count { color: var(--muted); font-size: 11px; }
 
 /* 持卡 */
 .overview { display: flex; gap: 10px; margin-bottom: 12px; }
@@ -314,8 +333,9 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 .rank-first { background: var(--navy); color: #fff; }
 .rank-second { background: var(--navy-light); color: var(--navy); }
 .rank-consider { background: #f5f0e6; color: var(--amber); }
-.earn-card-name { font-weight: 600; flex: 1; min-width: 0; }
-.earn-rate { font-weight: 700; color: var(--navy); }
+.earn-card-name { font-weight: 600; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.earn-rate { font-weight: 700; color: var(--navy); white-space: nowrap; }
+.earn-row-top .icon-btn { flex-shrink: 0; }
 .pending-badge { font-size: 11px; color: var(--amber); background: #fdf3e0; border-radius: 999px; padding: 1px 7px; }
 .expired-badge { color: var(--muted); background: #eee; }
 .earn-reason { color: var(--muted); font-size: 12px; margin-top: 4px; }
