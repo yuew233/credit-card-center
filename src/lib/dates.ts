@@ -44,15 +44,26 @@ export function monthsBetween(a: string, b: string): number {
   return (db.getFullYear() - da.getFullYear()) * 12 + (db.getMonth() - da.getMonth()) + (db.getDate() - da.getDate()) / 30;
 }
 
-/** 持有时长中文，如 "1年3个月" / "8个月" / "12天" */
-export function heldDuration(openedOn: string | null, closedOn: string | null, today: Date = new Date()): string {
-  if (!openedOn) return '未知';
+/** 持有时长中文，如 "1年3个月" / "8个月" / "12天"；lang=en 时返回英文 */
+export function heldDuration(openedOn: string | null, closedOn: string | null, today: Date = new Date(), lang: 'zh' | 'en' = 'zh'): string {
+  const unknown = lang === 'en' ? 'Unknown' : '未知';
+  if (!openedOn) return unknown;
   const end = closedOn ? parseDate(closedOn) : today;
   const start = parseDate(openedOn);
-  if (end < start) return '未知';
+  if (end < start) return unknown;
   let months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
   if (end.getDate() < start.getDate()) months -= 1;
   if (months < 0) months = 0;
+  if (lang === 'en') {
+    if (months >= 12) {
+      const y = Math.floor(months / 12);
+      const m = months % 12;
+      return m === 0 ? `${y} yr` : `${y} yr ${m} mo`;
+    }
+    if (months >= 1) return `${months} mo`;
+    const days = Math.round((end.getTime() - start.getTime()) / 86400000);
+    return `${days} d`;
+  }
   if (months >= 12) {
     const y = Math.floor(months / 12);
     const m = months % 12;

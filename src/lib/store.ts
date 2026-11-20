@@ -16,6 +16,7 @@ import type {
 import { CATALOG, PRODUCT_MAP } from '../data/catalog';
 import { CURRENCY_VALUES, EARN_RATES, TRANSFER_BONUSES, TRANSFER_RATES } from '../data/reference';
 import { uid } from './dates';
+import { buildExportFile, mergeImport, parseImportFile, type ImportSummary } from './io';
 
 const STORAGE_KEY = 'credit-card-center-v1';
 
@@ -33,7 +34,7 @@ export interface ImportCardInput {
   note?: string;
 }
 
-function emptyState(): AppState {
+export function emptyState(): AppState {
   return {
     cards: [],
     benefits: [],
@@ -196,18 +197,19 @@ export function useStore() {
     [update],
   );
 
-  /** 导入一组卡（模板 JSON 或导出文件格式）。返回导入的张数。 */
-  const importCards = useCallback(
-    (inputs: ImportCardInput[]): number => {
-      let count = 0;
-      inputs.forEach((input) => {
-        if (!input.name) return;
-        addCard(input);
-        count += 1;
-      });
-      return count;
+  /**
+   * 导入一个备份 JSON（完整备份，或只有 cards 的最小文件）。
+   * 先完整解析校验，失败时抛错、原数据不动；成功后一次性合并。
+   * 返回合并统计，供界面提示。
+   */
+  const importData = useCallback(
+    (text: string): ImportSummary => {
+      const parsed = parseImportFile(text);
+      const { state: next, summary } = mergeImport(state, parsed);
+      setState(next);
+      return summary;
     },
-    [addCard],
+    [state],
   );
 
   const setEarnRates = useCallback(
@@ -247,7 +249,7 @@ export function useStore() {
   }, []);
 
   const exportJson = useCallback(() => {
-    const blob = new Blob([JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), cards: state.cards, benefits: state.benefits, uses: state.uses }, null, 2)], {
+    const blob = new Blob([JSON.stringify(buildExportFile(state), null, 2)], {
       type: 'application/json',
     });
     const url = URL.createObjectURL(blob);
@@ -271,7 +273,7 @@ export function useStore() {
     deleteBenefit,
     logUse,
     deleteUse,
-    importCards,
+    importData,
     setEarnRates,
     setTransferBonuses,
     setTransferRates,

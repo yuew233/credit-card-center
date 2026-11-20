@@ -7,6 +7,7 @@
 
 import type { BenefitInstance, BenefitUse } from '../types';
 import { addMonths, fmtDate, parseDate, todayStr } from './dates';
+import { t } from './i18n';
 
 export interface Period {
   start: string;
@@ -29,17 +30,17 @@ export interface BenefitView {
 export function cycleLabel(b: BenefitInstance): string {
   switch (b.cycle) {
     case 'annual':
-      return b.cycleAnchor === 'anniversary' ? '持卡周年' : '自然年';
+      return b.cycleAnchor === 'anniversary' ? t('period.anniversary') : t('period.calendarYear');
     case 'monthly':
-      return '自然月';
+      return t('period.monthly');
     case 'semiannual':
-      return b.half === 1 ? '自然半年·上半年' : '自然半年·下半年';
+      return b.half === 1 ? t('period.semiH1') : t('period.semiH2');
     case 'multi_year':
-      return `每 ${b.cycleMonths ?? 4 * 12} 个月·持卡周年`;
+      return t('period.multiYear', { n: b.cycleMonths ?? 4 * 12 });
     case 'per_stay':
-      return '自然年·每次入住';
+      return t('period.perStay');
     case 'one_time':
-      return '一次性';
+      return t('period.oneTime');
     default:
       return '';
   }

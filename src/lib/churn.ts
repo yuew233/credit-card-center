@@ -5,6 +5,7 @@
 import type { HeldCard } from '../types';
 import { INK_FAMILY, MARRIOTT_PAIR, PRODUCT_MAP, SAPPHIRE_FAMILY } from '../data/catalog';
 import { addMonths, todayStr } from './dates';
+import { ruleNoteEn, t } from './i18n';
 
 export interface Eligibility {
   status: 'eligible' | 'not_yet' | 'unknown';
@@ -34,7 +35,7 @@ function estimateFromOpened(card: HeldCard, months: number, today: string): Elig
       light: today >= next ? 'green' : 'red',
       nextEligibleOn: next,
       estimated: true,
-      note: `未填上次拿奖励日期，按开卡日 + 3 个月估算。`,
+      note: t('churn.estimateFromOpened'),
     };
   }
   return {
@@ -42,12 +43,12 @@ function estimateFromOpened(card: HeldCard, months: number, today: string): Elig
     light: 'gray',
     nextEligibleOn: null,
     estimated: false,
-    note: '缺少开卡日和上次拿奖励日期，无法判断。',
+    note: t('churn.noDates'),
   };
 }
 
 export function evaluateCard(card: HeldCard, allCards: HeldCard[], today: Date): Eligibility {
-  const t = todayStr(today);
+  const todayS = todayStr(today);
   const product = card.productId ? PRODUCT_MAP.get(card.productId) : undefined;
   if (!product) {
     return {
@@ -55,7 +56,7 @@ export function evaluateCard(card: HeldCard, allCards: HeldCard[], today: Date):
       light: 'gray',
       nextEligibleOn: null,
       estimated: false,
-      note: '自定义卡，没有对应产品的规则。',
+      note: t('churn.custom'),
     };
   }
   const rule = product.churn;
@@ -68,7 +69,7 @@ export function evaluateCard(card: HeldCard, allCards: HeldCard[], today: Date):
         light: 'green',
         nextEligibleOn: null,
         estimated: false,
-        note: card.status === 'open' ? '已持有；无间隔规则，只看 5/24。' : '无间隔规则，只看 5/24。',
+        note: card.status === 'open' ? t('churn.noRuleOpen') : t('churn.noRule'),
       };
     case 'unknown':
       return {
@@ -76,16 +77,16 @@ export function evaluateCard(card: HeldCard, allCards: HeldCard[], today: Date):
         light: 'gray',
         nextEligibleOn: null,
         estimated: false,
-        note: rule.note,
+        note: ruleNoteEn(rule.note),
       };
     case 'lifetime': {
       if (card.bonusReceived === true) {
-        return { status: 'not_yet', light: 'red', nextEligibleOn: null, estimated: false, note: '一生一次，已拿过奖励，不能再拿。' };
+        return { status: 'not_yet', light: 'red', nextEligibleOn: null, estimated: false, note: t('churn.lifetimeTaken') };
       }
       if (card.bonusReceived === false) {
-        return { status: 'eligible', light: 'green', nextEligibleOn: null, estimated: false, note: '一生一次，尚未拿过奖励，可以申请。' };
+        return { status: 'eligible', light: 'green', nextEligibleOn: null, estimated: false, note: t('churn.lifetimeNotTaken') };
       }
-      return { status: 'unknown', light: 'gray', nextEligibleOn: null, estimated: false, note: '一生一次；是否拿过奖励待确认。' };
+      return { status: 'unknown', light: 'gray', nextEligibleOn: null, estimated: false, note: t('churn.lifetimeUnknown') };
     }
     case 'ever_had': {
       const everHeld = allCards.some((c) => c.productId === product.id);
@@ -95,10 +96,10 @@ export function evaluateCard(card: HeldCard, allCards: HeldCard[], today: Date):
           light: 'red',
           nextEligibleOn: null,
           estimated: false,
-          note: '曾经持有过这张卡，新奖励可能被拒；Chase 会在申请前提示资格，硬查询前可先看提示。',
+          note: t('churn.everHad'),
         };
       }
-      return { status: 'eligible', light: 'green', nextEligibleOn: null, estimated: false, note: '未持有过，可以申请。' };
+      return { status: 'eligible', light: 'green', nextEligibleOn: null, estimated: false, note: t('churn.everHadNo') };
     }
     case 'months_since_bonus': {
       const months = rule.months ?? 24;
@@ -106,14 +107,14 @@ export function evaluateCard(card: HeldCard, allCards: HeldCard[], today: Date):
       if (lb) {
         const next = addMonths(lb, months);
         return {
-          status: t >= next ? 'eligible' : 'not_yet',
-          light: t >= next ? 'green' : 'red',
+          status: todayS >= next ? 'eligible' : 'not_yet',
+          light: todayS >= next ? 'green' : 'red',
           nextEligibleOn: next,
           estimated: false,
-          note: `距上次拿奖励 ${months} 个月。`,
+          note: t('churn.monthsSinceBonus', { months }),
         };
       }
-      return estimateFromOpened(card, months, t);
+      return estimateFromOpened(card, months, todayS);
     }
     case 'sapphire_family': {
       const months = rule.months ?? 48;
@@ -128,33 +129,33 @@ export function evaluateCard(card: HeldCard, allCards: HeldCard[], today: Date):
             light: 'red',
             nextEligibleOn: next,
             estimated: false,
-            note: `家族内只能同时持有一张 Sapphire，另一张还在持有中；且距最近一次 Sapphire 奖励需满 ${months} 个月。`,
+            note: t('churn.sapphireBoth', { months }),
           };
         }
         return {
-          status: t >= next ? 'eligible' : 'not_yet',
-          light: t >= next ? 'green' : 'red',
+          status: todayS >= next ? 'eligible' : 'not_yet',
+          light: todayS >= next ? 'green' : 'red',
           nextEligibleOn: next,
           estimated: false,
-          note: `蓝宝石家族 ${months} 个月：距最近一次 Sapphire 奖励起算。`,
+          note: t('churn.sapphireMonths', { months }),
         };
       }
       if (otherOpen && card.status !== 'open') {
-        return { status: 'not_yet', light: 'red', nextEligibleOn: null, estimated: false, note: '家族内只能同时持有一张 Sapphire，另一张还在持有中。' };
+        return { status: 'not_yet', light: 'red', nextEligibleOn: null, estimated: false, note: t('churn.sapphireOneOpen') };
       }
-      return estimateFromOpened(card, months, t);
+      return estimateFromOpened(card, months, todayS);
     }
     case 'ink_family': {
       const fam = familyCards(INK_FAMILY);
       const received = fam.some((c) => c.bonusReceived === true);
       if (received) {
-        return { status: 'not_yet', light: 'red', nextEligibleOn: null, estimated: false, note: 'Ink Cash / Unlimited 同一奖励家族，已拿过其中一张的奖励。' };
+        return { status: 'not_yet', light: 'red', nextEligibleOn: null, estimated: false, note: t('churn.inkTaken') };
       }
       const lb = latestBonus(fam);
       if (lb) {
-        return { status: 'unknown', light: 'gray', nextEligibleOn: null, estimated: false, note: '家族内有拿奖励记录，但间隔口径待确认。' };
+        return { status: 'unknown', light: 'gray', nextEligibleOn: null, estimated: false, note: t('churn.inkUnknown') };
       }
-      return { status: 'eligible', light: 'green', nextEligibleOn: null, estimated: false, note: '家族内尚未拿过奖励，可以申请。' };
+      return { status: 'eligible', light: 'green', nextEligibleOn: null, estimated: false, note: t('churn.inkOk') };
     }
     case 'marriott_cross': {
       const months = rule.months ?? 24;
@@ -165,22 +166,22 @@ export function evaluateCard(card: HeldCard, allCards: HeldCard[], today: Date):
       const latest = [selfBonus, otherBonus].filter((d): d is string => !!d).sort().at(-1) ?? null;
       // AmEx 本卡也是一生一次
       if (product.id === 'amex-marriott-brilliant' && card.bonusReceived === true) {
-        return { status: 'not_yet', light: 'red', nextEligibleOn: null, estimated: false, note: 'AmEx 本卡一生一次，已拿过奖励。' };
+        return { status: 'not_yet', light: 'red', nextEligibleOn: null, estimated: false, note: t('churn.marriottLifetime') };
       }
       if (latest) {
         const next = addMonths(latest, months);
         return {
-          status: t >= next ? 'eligible' : 'not_yet',
-          light: t >= next ? 'green' : 'red',
+          status: todayS >= next ? 'eligible' : 'not_yet',
+          light: todayS >= next ? 'green' : 'red',
           nextEligibleOn: next,
           estimated: false,
-          note: `与另一张 Marriott 卡交叉限制 ${months} 个月：距最近一次拿奖励起算。`,
+          note: t('churn.marriottCross', { months }),
         };
       }
-      return estimateFromOpened(card, months, t);
+      return estimateFromOpened(card, months, todayS);
     }
     default:
-      return { status: 'unknown', light: 'gray', nextEligibleOn: null, estimated: false, note: rule.note };
+      return { status: 'unknown', light: 'gray', nextEligibleOn: null, estimated: false, note: ruleNoteEn(rule.note) };
   }
 }
 
