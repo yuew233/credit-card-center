@@ -10,7 +10,7 @@ import type { Store } from '../lib/store';
 import { evaluateCard, fiveTwentyFour, type Eligibility } from '../lib/churn';
 import { CATALOG } from '../data/catalog';
 import { fmtShort, heldDuration } from '../lib/dates';
-import { BankBadge, Chip, Field, Light } from './shared';
+import { BankBadge, Chip, Field, Light, sortBanks } from './shared';
 import { t, useLang } from '../lib/i18n';
 
 type EligibilityFilter = 'all' | 'eligible' | 'not_eligible';
@@ -192,6 +192,20 @@ export function HoldingsTab({
     return true;
   });
 
+  // 持卡中 / 已关卡两节，每节内再按银行分组。
+  const openCards = filtered.filter(({ card }) => card.status !== 'closed');
+  const closedCards = filtered.filter(({ card }) => card.status === 'closed');
+  const groupByBank = (items: typeof filtered) => {
+    const byBank = new Map<string, typeof filtered>();
+    items.forEach((it) => {
+      const bank = it.card.bank || '';
+      const arr = byBank.get(bank) ?? [];
+      arr.push(it);
+      byBank.set(bank, arr);
+    });
+    return sortBanks([...byBank.keys()]).map((bank) => ({ bank, items: byBank.get(bank)! }));
+  };
+
   const groupedBanks = useMemo(() => {
     const map = new Map<string, typeof CATALOG>();
     CATALOG.forEach((p) => {
@@ -304,11 +318,29 @@ export function HoldingsTab({
       {filtered.length === 0 ? (
         <div className="empty">{t('holdings.empty')}</div>
       ) : (
-        <div className="hold-list">
-          {filtered.map(({ card, eligibility }) => (
-            <CardRow key={card.id} card={card} eligibility={eligibility} store={store} />
-          ))}
-        </div>
+        (['open', 'closed'] as const).map((sec) => {
+          const items = sec === 'open' ? openCards : closedCards;
+          if (items.length === 0) return null;
+          return (
+            <div key={sec} className="hold-section">
+              <div className="hold-section-head">{sec === 'open' ? t('holdings.open') : t('holdings.closed')}</div>
+              {groupByBank(items).map((g) => (
+                <div key={g.bank || 'unknown'} className="hold-bank-group">
+                  <div className="hold-bank-head">
+                    <BankBadge bank={g.bank} size="xs" />
+                    <span className="hold-bank-name">{g.bank || t('common.unknown')}</span>
+                    <span className="hold-bank-count">{g.items.length}</span>
+                  </div>
+                  <div className="hold-list">
+                    {g.items.map(({ card, eligibility }) => (
+                      <CardRow key={card.id} card={card} eligibility={eligibility} store={store} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })
       )}
       <div className="tab-foot-note">{t('holdings.footNote')}</div>
 

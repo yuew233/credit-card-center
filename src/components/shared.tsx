@@ -1,4 +1,25 @@
-// 共享小组件：银行徽章（纯色文字徽章，不用任何外部 logo）、筛选 chips、表单行。
+// 共享小组件：银行徽章（官方 logo，本地打包；没有 logo 的银行回退为纯色文字徽章）、筛选 chips、表单行。
+
+import chaseLogo from '../assets/banks/chase.svg';
+import capitalOneLogo from '../assets/banks/capital-one.svg';
+import amexLogo from '../assets/banks/amex.svg';
+import citiLogo from '../assets/banks/citi.svg';
+import barclaysLogo from '../assets/banks/barclays.svg';
+import discoverLogo from '../assets/banks/discover.svg';
+import boaLogo from '../assets/banks/bank-of-america.svg';
+import robinhoodLogo from '../assets/banks/robinhood.svg';
+
+// 官方 logo（Wikimedia Commons 公开文件，本地打包，不走外链）。
+const BANK_LOGOS: Record<string, string> = {
+  Chase: chaseLogo,
+  'Capital One': capitalOneLogo,
+  Amex: amexLogo,
+  Citi: citiLogo,
+  Barclays: barclaysLogo,
+  Discover: discoverLogo,
+  'Bank of America': boaLogo,
+  Robinhood: robinhoodLogo,
+};
 
 export const BANK_COLORS: Record<string, string> = {
   Chase: '#0a2540',
@@ -21,8 +42,28 @@ export function bankColor(bank: string): string {
   return BANK_COLORS[bank] ?? '#5b6470';
 }
 
+/** 银行分组顺序：已知银行按此排，其余银行按名字排在后面。 */
+export const BANK_ORDER = ['Chase', 'Capital One', 'Amex', 'Citi', 'Barclays', 'Discover', 'Bank of America', 'Robinhood'];
+
+export function bankOrderIndex(bank: string): number {
+  const i = BANK_ORDER.indexOf(bank);
+  return i === -1 ? BANK_ORDER.length : i;
+}
+
+/** 按银行分组排序：先按 BANK_ORDER，再按银行名字母顺序。 */
+export function sortBanks(banks: string[]): string[] {
+  return [...banks].sort((a, b) => {
+    const d = bankOrderIndex(a) - bankOrderIndex(b);
+    return d !== 0 ? d : a.localeCompare(b);
+  });
+}
+
 export function BankBadge({ bank, size = 'sm' }: { bank: string; size?: 'sm' | 'xs' }) {
   if (!bank) return null;
+  const logo = BANK_LOGOS[bank];
+  if (logo) {
+    return <img className={`bank-logo ${size === 'xs' ? 'xs' : ''}`} src={logo} alt={bank} title={bank} />;
+  }
   return (
     <span
       className={`bank-badge ${size === 'xs' ? 'xs' : ''}`}
