@@ -300,6 +300,15 @@ export const CATALOG: CardProduct[] = [
     benefits: [],
     churn: { type: 'unknown', note: '同卡 24 个月（估算，待确认）。' },
   },
+  {
+    id: 'robinhood-gold-card',
+    bank: 'Robinhood',
+    name: 'Robinhood Gold Card',
+    annualFee: null,
+    kind: 'personal',
+    benefits: [],
+    churn: { type: 'none', note: '无间隔规则，只看 5/24。需保持 Robinhood Gold 会员（$50/年），否则卡会被关闭；3% 返现返到券商账户才是足值。' },
+  },
 ];
 
 export const PRODUCT_MAP: Map<string, CardProduct> = new Map(CATALOG.map((p) => [p.id, p]));
