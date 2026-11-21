@@ -10,7 +10,7 @@
 import { useMemo, useState } from 'react';
 import type { TransferBonus, TransferRate } from '../types';
 import type { Store } from '../lib/store';
-import { todayStr } from '../lib/dates';
+import { daysBetween, todayStr } from '../lib/dates';
 import { t } from '../lib/i18n';
 import { Chip } from './shared';
 
@@ -33,10 +33,12 @@ function RateRow({
   rate,
   bonusPct,
   store,
+  mode,
 }: {
   rate: TransferRate;
   bonusPct: number | null;
   store: Store;
+  mode: GroupMode;
 }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -51,7 +53,8 @@ function RateRow({
   return (
     <div className="rate-row">
       <button type="button" className="rate-summary" onClick={() => setOpen(!open)}>
-        <span className="rate-currency">{rate.currency}</span>
+        {/* 银行分组下行首显示目标伙伴（银行已在组头），伙伴分组下显示来源银行 */}
+        <span className="rate-currency">{mode === 'bank' ? rate.partner : rate.currency}</span>
         <span className="rate-ratio">
           {ratioText(rate)}
           {bonusPct !== null ? (
@@ -135,12 +138,14 @@ function RateGroup({
   rates,
   bonusFor,
   store,
+  mode,
 }: {
   label: string;
   kind: string;
   rates: TransferRate[];
   bonusFor: (currency: string, partner: string) => TransferBonus | null;
   store: Store;
+  mode: GroupMode;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -169,6 +174,7 @@ function RateGroup({
             rate={r}
             bonusPct={bonusFor(r.currency, r.partner)?.bonusPct ?? null}
             store={store}
+            mode={mode}
           />
         ))}
       </div>
@@ -255,35 +261,26 @@ export function TransfersTab({ store }: { store: Store }) {
         {valuesVerified ? <span className="tab-sub"> · {t('transfers.verifiedOn', { date: valuesVerified })}</span> : null}
       </div>
 
-      <div className="tab-head">
-        <div className="chip-row">
-          <Chip active={mode === 'partner'} onClick={() => setMode('partner')}>
-            {t('transfers.byPartner')}
-          </Chip>
-          <Chip active={mode === 'bank'} onClick={() => setMode('bank')}>
-            {t('transfers.byBank')}
-          </Chip>
-        </div>
-        <div className="tab-sub">
-          {t('transfers.count', { n: store.state.transferRates.length })}
-        </div>
-      </div>
-
       <div className="bonus-list">
         <div className="bonus-list-title">{t('transfers.bonuses')}</div>
         {sortedActiveBonuses.length === 0 ? (
           <div className="tab-sub">{t('transfers.noBonuses')}</div>
         ) : (
-          sortedActiveBonuses.map((b) => (
-            <div key={`${b.currency}-${b.partner}`} className="bonus-line">
-              <span>
-                {b.currency} → {b.partner}
-              </span>
-              <span className="bonus-badge">+{b.bonusPct}%</span>
-              <span className="tab-sub">{t('transfers.until', { date: b.endsOn })}</span>
-              {b.note ? <span className="tab-sub">{b.note}</span> : null}
-            </div>
-          ))
+          sortedActiveBonuses.map((b) => {
+            // 14 天内截止的 offer 高亮提醒
+            const endingSoon = daysBetween(today, b.endsOn) >= 0 && daysBetween(today, b.endsOn) <= 14;
+            return (
+              <div key={`${b.currency}-${b.partner}`} className={`bonus-line${endingSoon ? ' expiring-soon' : ''}`}>
+                <span>
+                  {b.currency} → {b.partner}
+                </span>
+                <span className="bonus-badge">+{b.bonusPct}%</span>
+                {endingSoon ? <span className="expiring-tag">{t('transfers.expiringSoon')}</span> : null}
+                <span className="tab-sub">{t('transfers.until', { date: b.endsOn })}</span>
+                {b.note ? <span className="tab-sub">{b.note}</span> : null}
+              </div>
+            );
+          })
         )}
         {endedBonuses.length > 0 && (
           <div>
@@ -304,9 +301,23 @@ export function TransfersTab({ store }: { store: Store }) {
         )}
       </div>
 
+      <div className="tab-head">
+        <div className="chip-row">
+          <Chip active={mode === 'partner'} onClick={() => setMode('partner')}>
+            {t('transfers.byPartner')}
+          </Chip>
+          <Chip active={mode === 'bank'} onClick={() => setMode('bank')}>
+            {t('transfers.byBank')}
+          </Chip>
+        </div>
+        <div className="tab-sub">
+          {t('transfers.count', { n: store.state.transferRates.length })}
+        </div>
+      </div>
+
       <div className="partner-groups">
         {grouped.map((g) => (
-          <RateGroup key={g.label} label={g.label} kind={g.kind} rates={g.rates} bonusFor={bonusFor} store={store} />
+          <RateGroup key={g.label} label={g.label} kind={g.kind} rates={g.rates} bonusFor={bonusFor} store={store} mode={mode} />
         ))}
       </div>
 

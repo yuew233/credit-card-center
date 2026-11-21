@@ -10,8 +10,14 @@ import type { Store } from '../lib/store';
 import { evaluateCard, fiveTwentyFour, type Eligibility } from '../lib/churn';
 import { CATALOG } from '../data/catalog';
 import { fmtShort, heldDuration } from '../lib/dates';
-import { BankBadge, Chip, Field, Light, sortBanks } from './shared';
+import { BankBadge, Chip, Field, sortBanks } from './shared';
 import { t, useLang } from '../lib/i18n';
+
+function statusText(status: Eligibility['status']): string {
+  if (status === 'eligible') return t('holdings.statusEligible');
+  if (status === 'not_yet') return t('holdings.statusNotYet');
+  return t('holdings.statusUnknown');
+}
 
 type EligibilityFilter = 'all' | 'eligible' | 'not_eligible';
 
@@ -33,7 +39,7 @@ function CardRow({ card, eligibility, store }: { card: HeldCard; eligibility: El
         <BankBadge bank={card.bank} />
         <span className="hold-name">{card.name}</span>
         <span className="hold-duration">{heldDuration(card.openedOn, card.closedOn, undefined, lang)}</span>
-        <Light color={eligibility.light} />
+        <span className={`elig-pill elig-${eligibility.status}`}>{statusText(eligibility.status)}</span>
         <span className="hold-chevron">{open ? '▴' : '▾'}</span>
       </button>
       {open && (
@@ -41,6 +47,8 @@ function CardRow({ card, eligibility, store }: { card: HeldCard; eligibility: El
           <div className="hold-status-line">
             {card.status === 'closed' ? t('holdings.closed') : t('holdings.open')}
             {card.kind === 'business' ? ` · ${t('holdings.business')}` : ` · ${t('holdings.personal')}`}
+            {' · '}
+            {statusText(eligibility.status)}
             {eligibility.nextEligibleOn ? (
               <span>
                 {' '}
@@ -49,7 +57,10 @@ function CardRow({ card, eligibility, store }: { card: HeldCard; eligibility: El
               </span>
             ) : null}
           </div>
-          <div className="hold-rule">{eligibility.note}</div>
+          <div className="hold-rule">
+            <span className="hold-rule-label">{t('holdings.rule')}：</span>
+            {eligibility.note}
+          </div>
           <dl className="hold-dl">
             <div>
               <dt>{t('holdings.openedOn')}</dt>
@@ -139,19 +150,7 @@ function CardRow({ card, eligibility, store }: { card: HeldCard; eligibility: El
   );
 }
 
-export function HoldingsTab({
-  store,
-  onImportClick,
-  onLoadSample,
-  onExport,
-  onClear,
-}: {
-  store: Store;
-  onImportClick: () => void;
-  onLoadSample: () => void;
-  onExport: () => void;
-  onClear: () => void;
-}) {
+export function HoldingsTab({ store }: { store: Store }) {
   const [bankFilter, setBankFilter] = useState('');
   const [eligFilter, setEligFilter] = useState<EligibilityFilter>('all');
   const [productId, setProductId] = useState(CATALOG[0]?.id ?? '');
@@ -323,7 +322,9 @@ export function HoldingsTab({
           if (items.length === 0) return null;
           return (
             <div key={sec} className="hold-section">
-              <div className="hold-section-head">{sec === 'open' ? t('holdings.open') : t('holdings.closed')}</div>
+              <div className="hold-section-head">
+                {sec === 'open' ? t('holdings.openWithCount', { n: items.length }) : t('holdings.closedWithCount', { n: items.length })}
+              </div>
               {groupByBank(items).map((g) => (
                 <div key={g.bank || 'unknown'} className="hold-bank-group">
                   <div className="hold-bank-head">
@@ -343,24 +344,6 @@ export function HoldingsTab({
         })
       )}
       <div className="tab-foot-note">{t('holdings.footNote')}</div>
-
-      <div className="data-manage">
-        <div className="data-btns">
-          <button type="button" className="btn" onClick={onImportClick}>
-            {t('btn.import')}
-          </button>
-          <button type="button" className="btn" onClick={onLoadSample}>
-            {t('btn.sample')}
-          </button>
-          <button type="button" className="btn" onClick={onExport}>
-            {t('btn.export')}
-          </button>
-          <button type="button" className="btn" onClick={onClear}>
-            {t('btn.clear')}
-          </button>
-        </div>
-        <div className="app-version">{t('app.version')}</div>
-      </div>
     </div>
   );
 }

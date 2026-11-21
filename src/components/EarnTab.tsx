@@ -48,6 +48,7 @@ function RateRow({
   rankBadge,
   gapText,
   marketDetail,
+  highlight,
 }: {
   rate: EarnRate;
   store: Store;
@@ -55,6 +56,7 @@ function RateRow({
   rankBadge?: React.ReactNode;
   gapText?: string | null;
   marketDetail?: React.ReactNode;
+  highlight?: 'mine' | 'market';
 }) {
   const [editing, setEditing] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -65,8 +67,9 @@ function RateRow({
   const expired = rate.quarterly && rate.validUntil ? rate.validUntil < todayStr() : false;
 
   return (
-    <div className={`earn-row ${expired ? 'expired' : ''} ${rate.rank === 0 && rate.source === 'mine' ? 'consider' : ''} ${rate.source === 'market' ? 'market-row' : ''}`}>
-      <div
+    <div
+      className={`earn-row ${expired ? 'expired' : ''} ${rate.rank === 0 && rate.source === 'mine' ? 'consider' : ''} ${rate.source === 'market' ? 'market-row' : ''} ${highlight === 'mine' ? 'best-row best-mine' : ''} ${highlight === 'market' ? 'best-row best-market' : ''}`}
+    >      <div
         className="earn-row-top"
         onClick={marketDetail ? () => setDetailOpen(!detailOpen) : undefined}
         style={marketDetail ? { cursor: 'pointer' } : undefined}
@@ -262,7 +265,7 @@ function CategorySection({
 
       <div className="earn-rows">
         {primary ? (
-          <RateRow rate={primary} store={store} badge={<span className="my-best-badge">{t('earn.myBest')}</span>} />
+          <RateRow rate={primary} store={store} badge={<span className="my-best-badge">{t('earn.myBest')}</span>} highlight="mine" />
         ) : null}
         {restMine.length > 0 && !mineOpen ? (
           <button type="button" className="expand-toggle" onClick={() => setMineOpen(true)}>
@@ -286,6 +289,7 @@ function CategorySection({
               store={store}
               rankBadge={<span className="market-best-badge">{t('earn.marketBest')}</span>}
               gapText={gapText}
+              highlight="market"
               marketDetail={
                 <>
                   {marketBest.feeText ? <div>{marketBest.feeText}</div> : null}

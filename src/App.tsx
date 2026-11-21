@@ -4,32 +4,21 @@ import { ReimbursementsTab } from './components/ReimbursementsTab';
 import { HoldingsTab } from './components/HoldingsTab';
 import { TransfersTab } from './components/TransfersTab';
 import { EarnTab } from './components/EarnTab';
+import { SettingsTab } from './components/SettingsTab';
+import { IconCard, IconGear, IconReceipt, IconSwap, IconZap } from './components/shared';
 // 示例卡模板（data/cards-template.json）：明确标注为示例的假数据。
 import templateData from './data/cards-template.json';
-import { getLang, LangContext, setLangModule, t, useLang, type Lang } from './lib/i18n';
+import { getLang, LangContext, setLangModule, t, type Lang } from './lib/i18n';
 
-type Tab = 'reimburse' | 'holdings' | 'transfers' | 'earn';
+type Tab = 'reimburse' | 'holdings' | 'transfers' | 'earn' | 'settings';
 
-const TABS: { id: Tab; labelKey: string }[] = [
-  { id: 'reimburse', labelKey: 'tab.reimburse' },
-  { id: 'holdings', labelKey: 'tab.holdings' },
-  { id: 'transfers', labelKey: 'tab.transfers' },
-  { id: 'earn', labelKey: 'tab.earn' },
+const TABS: { id: Tab; labelKey: string; Icon: (p: { size?: number }) => React.ReactNode }[] = [
+  { id: 'reimburse', labelKey: 'tab.reimburse', Icon: IconReceipt },
+  { id: 'holdings', labelKey: 'tab.holdings', Icon: IconCard },
+  { id: 'transfers', labelKey: 'tab.transfers', Icon: IconSwap },
+  { id: 'earn', labelKey: 'tab.earn', Icon: IconZap },
+  { id: 'settings', labelKey: 'tab.settings', Icon: IconGear },
 ];
-
-function LangToggle() {
-  const { lang, setLang } = useLang();
-  return (
-    <div className="lang-toggle" role="group" aria-label="Language / 语言">
-      <button type="button" className={lang === 'zh' ? 'active' : ''} onClick={() => setLang('zh')}>
-        中文
-      </button>
-      <button type="button" className={lang === 'en' ? 'active' : ''} onClick={() => setLang('en')}>
-        English
-      </button>
-    </div>
-  );
-}
 
 export default function App() {
   const store = useStore();
@@ -98,9 +87,6 @@ export default function App() {
             <h1>{t('app.title')}</h1>
             <p className="app-sub">{t('app.subtitle')}</p>
           </div>
-          <div className="header-right">
-            <LangToggle />
-          </div>
         </header>
 
         {msg ? (
@@ -124,30 +110,36 @@ export default function App() {
           </div>
         )}
 
-        <nav className="tabs">
-          {TABS.map((tb) => (
-            <button key={tb.id} type="button" className={`tab ${tab === tb.id ? 'active' : ''}`} onClick={() => setTab(tb.id)}>
-              {t(tb.labelKey)}
-            </button>
-          ))}
-        </nav>
-
         <main className="tab-body">
           {tab === 'reimburse' && <ReimbursementsTab store={store} />}
-          {tab === 'holdings' && (
-            <HoldingsTab
-              store={store}
+          {tab === 'holdings' && <HoldingsTab store={store} />}
+          {tab === 'transfers' && <TransfersTab store={store} />}
+          {tab === 'earn' && <EarnTab store={store} />}
+          {tab === 'settings' && (
+            <SettingsTab
               onImportClick={() => fileRef.current?.click()}
               onLoadSample={loadSample}
               onExport={() => store.exportJson()}
               onClear={clearAllData}
             />
           )}
-          {tab === 'transfers' && <TransfersTab store={store} />}
-          {tab === 'earn' && <EarnTab store={store} />}
         </main>
 
         <footer className="app-footer">{t('app.footer')}</footer>
+
+        <nav className="bottom-nav">
+          {TABS.map((tb) => (
+            <button
+              key={tb.id}
+              type="button"
+              className={`bottom-nav-item ${tab === tb.id ? 'active' : ''}`}
+              onClick={() => setTab(tb.id)}
+            >
+              <tb.Icon size={20} />
+              <span>{t(tb.labelKey)}</span>
+            </button>
+          ))}
+        </nav>
       </div>
     </LangContext.Provider>
   );

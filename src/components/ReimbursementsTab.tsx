@@ -10,9 +10,17 @@ import { useMemo, useState } from 'react';
 import type { BenefitInstance } from '../types';
 import type { Store } from '../lib/store';
 import { evaluateBenefit, type BenefitView } from '../lib/periods';
-import { fmtShort, todayStr } from '../lib/dates';
-import { BankBadge, Chip, sortBanks } from './shared';
+import { daysBetween, fmtShort, todayStr } from '../lib/dates';
+import { BankBadge, bankOrderIndex, Chip, IconEyeOff, IconPencil, sortBanks } from './shared';
 import { t } from '../lib/i18n';
+
+/** 临期：本周期可用、非月度周期、截至日距今天 ≤ 30 天（月度福利每月都轮换，不标临期）。 */
+export function isExpiringSoon(view: BenefitView, today: string): boolean {
+  if (view.status !== 'available' || !view.periodEnd) return false;
+  if (view.benefit.cycle === 'monthly') return false;
+  const d = daysBetween(today, view.periodEnd);
+  return d >= 0 && d <= 30;
+}
 
 type StatusFilter = 'unused' | 'used' | 'all';
 
@@ -49,6 +57,7 @@ function BenefitCard({
   const [editAmount, setEditAmount] = useState(String(b.amount));
   const [editNote, setEditNote] = useState(b.note);
   const pct = b.amount > 0 ? Math.round(((b.amount - view.remaining) / b.amount) * 100) : 0;
+  const expiring = isExpiringSoon(view, todayStr());
 
   return (
     <div className={`benefit-card ${view.status === 'used' ? 'is-used' : ''}`}>
@@ -57,10 +66,12 @@ function BenefitCard({
           <BankBadge bank={bank} size="xs" />
           <span className="benefit-name">{b.name}</span>
           <span className="period-badge">{view.periodLabel}</span>
+          {view.status === 'available' ? <span className="status-badge unused-badge">{t('reimburse.unused')}</span> : null}
+          {expiring ? <span className="status-badge expiring-badge">{t('reimburse.expiringSoon')}</span> : null}
         </div>
         <div className="benefit-actions">
           <button type="button" className="icon-btn" title={t('reimburse.ignore')} onClick={() => store.updateBenefit(b.id, { ignored: true })}>
-            👁‍🗨
+            <IconEyeOff size={18} />
           </button>
           <button
             type="button"
@@ -70,7 +81,7 @@ function BenefitCard({
               setEditing(!editing);
             }}
           >
-            ✎
+            <IconPencil size={18} />
           </button>
         </div>
       </div>
@@ -181,7 +192,7 @@ function DoorDashCard({
               title={`${t('reimburse.ignore')} ${v.benefit.name}`}
               onClick={() => store.updateBenefit(v.benefit.id, { ignored: true })}
             >
-              👁‍🗨
+              <IconEyeOff size={18} />
             </button>
           ))}
         </div>
@@ -254,10 +265,12 @@ export function ReimbursementsTab({ store }: { store: Store }) {
 
   // 按银行分组，组内再按卡分组；DoorDash 同卡多项福利合成一张卡。
   // 银行小计只算现金类、当前周期可用、未忽略的剩余额度（和顶部总额同口径）。
+  // 排序：组内卡按年费降序（年费未知排最后）；银行组按组内最高年费降序，同年费按原银行顺序。
   type CardGroup = {
     cardId: string;
     cardName: string;
     bank: string;
+    annualFee: number | null;
     singles: { view: BenefitView }[];
     doordash: BenefitView[];
   };
@@ -277,14 +290,19 @@ export function ReimbursementsTab({ store }: { store: Store }) {
       const cardId = view.benefit.cardId;
       let cg = byCard.get(cardId);
       if (!cg) {
-        cg = { cardId, cardName: card?.name ?? '', bank, singles: [], doordash: [] };
+        cg = { cardId, cardName: card?.name ?? '', bank, annualFee: card?.annualFee ?? null, singles: [], doordash: [] };
         byCard.set(cardId, cg);
         bg.cards.push(cg);
       }
       if (view.benefit.group === 'doordash') cg.doordash.push(view);
       else cg.singles.push({ view });
     });
-    return sortBanks([...byBank.keys()]).map((bank) => byBank.get(bank)!);
+    const groups = sortBanks([...byBank.keys()]).map((bank) => byBank.get(bank)!);
+    groups.forEach((g) =>
+      g.cards.sort((a, b) => (b.annualFee ?? -1) - (a.annualFee ?? -1) || a.cardName.localeCompare(b.cardName)),
+    );
+    const topFee = (g: BankGroup) => Math.max(...g.cards.map((c) => c.annualFee ?? -1));
+    return [...groups].sort((a, b) => topFee(b) - topFee(a) || bankOrderIndex(a.bank) - bankOrderIndex(b.bank));
   })();
 
   return (

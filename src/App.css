@@ -25,7 +25,7 @@ body {
 button { font-family: inherit; }
 input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 
-.app { max-width: 860px; margin: 0 auto; padding: 16px 14px 40px; }
+.app { max-width: 860px; margin: 0 auto; padding: 16px 14px 92px; }
 .app-header { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
 .app-header h1 { margin: 0; font-size: 20px; color: var(--navy); }
 .app-sub { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
@@ -68,18 +68,34 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 .welcome code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
 .welcome-note { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
 
-.tabs { display: flex; gap: 6px; margin-bottom: 12px; }
-.tab {
-  flex: 1;
-  padding: 9px 0;
-  border: 1px solid var(--border);
-  border-radius: 999px;
+/* ---- 底部 tab 菜单（参考打卡应用，固定在底部，5 页切换） ---- */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
   background: var(--card);
-  cursor: pointer;
-  font-size: 13px;
-  color: var(--text);
+  border-top: 1px solid var(--border);
+  padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  box-shadow: 0 -2px 12px rgba(22, 50, 79, 0.06);
 }
-.tab.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+.bottom-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0 2px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.bottom-nav-item svg { display: block; }
+.bottom-nav-item.active { color: var(--navy); font-weight: 700; }
 
 .tab-body { min-height: 200px; }
 .tab-head { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; margin-bottom: 10px; }
@@ -125,7 +141,12 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
   padding: 1px 7px;
   white-space: nowrap;
 }
-.benefit-actions { display: flex; gap: 2px; flex-shrink: 0; }
+.benefit-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.benefit-actions .icon-btn svg { display: block; }
+/* 未用 / 临期徽章 */
+.status-badge { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
+.unused-badge { color: var(--navy); background: var(--navy-light); }
+.expiring-badge { color: #8a5a00; background: #fdf3e0; }
 .benefit-remaining { font-size: 14px; font-weight: 700; margin-top: 8px; }
 .benefit-remaining.not-started { color: var(--amber); font-size: 13px; }
 .benefit-until { font-size: 12px; font-weight: 400; color: var(--muted); }
@@ -148,10 +169,12 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 .use-chip { background: var(--bg); border-radius: 999px; padding: 1px 4px 1px 8px; font-size: 11px; }
 .use-del { background: none; border: none; cursor: pointer; color: var(--muted); padding: 0 2px; }
 .benefit-ops { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+/* 标记已用按钮：全宽、加大 */
+.benefit-ops .btn { flex: 1; width: 100%; padding: 11px 0; font-size: 14px; }
 .partial { display: inline-flex; gap: 6px; }
 .partial input { width: 110px; border: 1px solid var(--border); border-radius: 8px; padding: 5px 8px; }
 .doordash-btns { display: flex; gap: 8px; margin-top: 10px; }
-.doordash-btn { flex: 1; padding: 8px 0; }
+.doordash-btn { flex: 1; padding: 11px 0; font-size: 13px; }
 .ignored-section { margin-top: 14px; }
 .ignored-toggle { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 12px; padding: 4px 0; }
 .ignored-card { opacity: 0.7; }
@@ -201,7 +224,13 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 
 /* ---- 持卡：持有中 / 已关卡 + 银行分组 ---- */
 .hold-section { margin-bottom: 14px; }
-.hold-section-head { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+.hold-section-head { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+/* 可否再开：显式文字（绿可开 / 红不可 / 灰待确认） */
+.elig-pill { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; white-space: nowrap; flex-shrink: 0; }
+.elig-eligible { color: var(--green); background: var(--green-bg); }
+.elig-not_yet { color: var(--red); background: #fdecea; }
+.elig-unknown { color: var(--muted); background: #eef0f2; }
+.hold-rule-label { font-weight: 700; color: var(--text); }
 .hold-bank-group { margin-bottom: 10px; }
 .hold-bank-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
 .hold-bank-name { font-weight: 700; font-size: 12px; }
@@ -267,6 +296,9 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 .bonus-list { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; }
 .bonus-list-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; }
 .bonus-line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 4px 0; font-size: 12px; }
+/* 14 天内截止的 offer 高亮 */
+.bonus-line.expiring-soon { background: #fff8e6; border: 1px solid #f0dfa8; border-radius: 8px; padding: 6px 8px; margin: 2px 0; }
+.expiring-tag { font-size: 11px; font-weight: 700; color: #8a5a00; background: #fdf3e0; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
 .bonus-line.ended { opacity: 0.6; }
 .bonus-badge {
   background: var(--green-bg);
@@ -341,11 +373,14 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 .earn-reason { color: var(--muted); font-size: 12px; margin-top: 4px; }
 
 .app-footer { margin-top: 24px; color: var(--muted); font-size: 11px; text-align: center; }
-.data-manage { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+
+/* ---- 设置页 ---- */
+.settings-section { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+.settings-head { font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+.settings-note { color: var(--muted); font-size: 12px; margin-top: 10px; }
 .app-version { color: var(--muted); font-size: 11px; text-align: center; }
 
-/* ---- 语言切换（右上角分段开关，参考打卡应用） ---- */
-.header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+/* ---- 语言切换（分段开关，设置页内） ---- */
 .lang-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; background: var(--card); }
 .lang-toggle button { border: none; background: none; padding: 4px 12px; font-size: 12px; cursor: pointer; color: var(--muted); }
 .lang-toggle button.active { background: var(--navy); color: #fff; font-weight: 600; }
@@ -356,6 +391,9 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 .market-best-badge { font-size: 11px; font-weight: 700; color: #7a5c00; background: #fef3c7; border: 1px solid #f5d76e; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
 .market-rank-badge { font-size: 11px; color: #7a5c00; background: #fef9e7; border: 1px solid #f5d76e; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
 .market-row { border: 1px solid #f5d76e; border-radius: 10px; padding: 8px 10px; margin-top: 6px; background: #fffdf5; }
+/* 最佳行高亮：我的最佳蓝框蓝底，市场最佳金框 */
+.best-row { border: 1.5px solid var(--navy); border-radius: 12px; padding: 10px 12px; margin: 4px 0; background: #f2f7fb; }
+.best-row.best-market { border-color: #e8a100; background: #fffdf5; }
 .market-row .earn-row-top { flex-wrap: wrap; }
 .q4-tag { font-size: 11px; font-weight: 700; color: #fff; background: var(--navy); border-radius: 4px; padding: 1px 5px; white-space: nowrap; }
 .expand-toggle { display: block; width: 100%; text-align: left; background: none; border: none; color: var(--navy); font-size: 12px; padding: 6px 0; cursor: pointer; }

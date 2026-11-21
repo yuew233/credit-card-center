@@ -37,6 +37,11 @@ export function addDays(s: string, days: number): string {
   return fmtDate(d);
 }
 
+/** 天数差：b - a 的整天数（负数表示 b 在 a 之前） */
+export function daysBetween(a: string, b: string): number {
+  return Math.round((parseDate(b).getTime() - parseDate(a).getTime()) / 86400000);
+}
+
 /** 月份差：a 到 b 之间完整的月数（b - a），不足一月按天折算为小数 */
 export function monthsBetween(a: string, b: string): number {
   const da = parseDate(a);

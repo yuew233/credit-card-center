@@ -41,6 +41,7 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
   'tab.holdings': { zh: '持卡', en: 'Cards' },
   'tab.transfers': { zh: '转分', en: 'Transfers' },
   'tab.earn': { zh: '刷哪张', en: 'Best Card' },
+  'tab.settings': { zh: '设置', en: 'Settings' },
   'btn.import': { zh: '导入备份', en: 'Import backup' },
   'btn.sample': { zh: '加载示例卡', en: 'Load sample cards' },
   'btn.export': { zh: '导出备份', en: 'Export backup' },
@@ -78,7 +79,7 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
     zh: '参考数据（转分比例、奖励、估值、刷卡返现）为公开信息，2026-11-18 核实；银行条款会变，请以发卡行官网为准。转分不可逆。',
     en: 'Reference data (transfer ratios, bonuses, valuations, earn rates) is public information, verified 2026-11-18; bank terms change — check the issuer’s site. Transfers are irreversible.',
   },
-  'app.version': { zh: '版本 v1.0.0', en: 'Version v1.0.0' },
+  'app.version': { zh: '版本 v1.1.0', en: 'Version v1.1.0' },
 
   // ---- 通用 ----
   'common.unknownDate': { zh: '待确认', en: 'To confirm' },
@@ -99,7 +100,7 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
   'reimburse.unused': { zh: '未用', en: 'Unused' },
   'reimburse.used': { zh: '已用', en: 'Used' },
   'reimburse.all': { zh: '全部', en: 'All' },
-  'reimburse.noCards': { zh: '还没有卡。去「持卡」页最下面点「加载示例卡」看看效果，或「导入备份」导入自己的卡。', en: 'No cards yet. Go to the bottom of the Cards tab and click “Load sample cards” to try it out, or “Import backup” to bring in your cards.' },
+  'reimburse.noCards': { zh: '还没有卡。去「设置」页点「加载示例卡」看看效果，或「导入备份」导入自己的卡。', en: 'No cards yet. Go to the Settings tab and click “Load sample cards” to try it out, or “Import backup” to bring in your cards.' },
   'reimburse.noBenefits': { zh: '当前筛选下没有福利。', en: 'No benefits match the current filters.' },
   'reimburse.remaining': { zh: '还剩 {amount}', en: '{amount} left' },
   'reimburse.until': { zh: '截至 {date}', en: 'until {date}' },
@@ -121,6 +122,7 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
   'reimburse.restore': { zh: '恢复', en: 'Restore' },
   'reimburse.doordashNote': { zh: '每月（自然月）额度；自提订单有最低消费门槛。', en: 'Monthly (calendar month) allowance; pickup orders have a minimum spend.' },
   'reimburse.doordashUsed': { zh: '（已用）', en: '(used)' },
+  'reimburse.expiringSoon': { zh: '临期', en: 'Expiring soon' },
   'period.anniversary': { zh: '持卡周年', en: 'Anniversary year' },
   'period.calendarYear': { zh: '自然年', en: 'Calendar year' },
   'period.monthly': { zh: '自然月', en: 'Calendar month' },
@@ -142,7 +144,7 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
   'holdings.productLabel': { zh: '卡产品（从目录选择，福利自动生成）', en: 'Card product (pick from the catalog; benefits are auto-generated)' },
   'holdings.openedOn': { zh: '开卡日期', en: 'Opened date' },
   'holdings.lastBonusLabel': { zh: '上次拿奖励日期（没有可空着，会按开卡日估算）', en: 'Last bonus date (leave blank if unknown; estimated from opened date)' },
-  'holdings.addHint': { zh: '也可以到本页最下面点「导入备份」批量导入，或用「加载示例卡」先看看效果。', en: 'You can also bulk-import from “Import backup” at the bottom of this page, or try “Load sample cards” first.' },
+  'holdings.addHint': { zh: '也可以到「设置」页点「导入备份」批量导入，或用「加载示例卡」先看看效果。', en: 'You can also bulk-import from “Import backup” on the Settings tab, or try “Load sample cards” first.' },
   'holdings.empty': { zh: '没有符合条件的卡。', en: 'No cards match.' },
   'holdings.footNote': {
     zh: '间隔从上次拿奖励日期起算，关卡不重置时钟；没有拿奖励日期时按开卡日 + 3 个月估算，并标注“估算”。',
@@ -150,6 +152,12 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
   },
   'holdings.open': { zh: '持有中', en: 'Open' },
   'holdings.closed': { zh: '已关卡', en: 'Closed' },
+  'holdings.openWithCount': { zh: '持有中 · {n} 张', en: 'Open · {n}' },
+  'holdings.closedWithCount': { zh: '已关卡 · {n} 张', en: 'Closed · {n}' },
+  'holdings.statusEligible': { zh: '可申请', en: 'Eligible' },
+  'holdings.statusNotYet': { zh: '尚未可申请', en: 'Not yet' },
+  'holdings.statusUnknown': { zh: '待确认', en: 'To confirm' },
+  'holdings.rule': { zh: '规则', en: 'Rule' },
   'holdings.business': { zh: '商业卡', en: 'Business' },
   'holdings.personal': { zh: '个人卡', en: 'Personal' },
   'holdings.nextEligible': { zh: '下次可拿奖励：{date}', en: 'Next bonus eligible: {date}' },
@@ -199,6 +207,7 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
   'transfers.ended': { zh: '最近结束（{n}）', en: 'Recently ended ({n})' },
   'transfers.endedOn': { zh: '已于 {date} 结束', en: 'Ended {date}' },
   'transfers.until': { zh: '截至 {date}', en: 'Ends {date}' },
+  'transfers.expiringSoon': { zh: '即将截止', en: 'Ending soon' },
   'transfers.sources': { zh: '{n} 个来源', en: '{n} sources' },
   'transfers.airline': { zh: '航司', en: 'Airline' },
   'transfers.hotel': { zh: '酒店', en: 'Hotel' },
@@ -268,6 +277,15 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
     zh: '返现口径以各银行条款为准；带「待确认」的条目确认前不要按它决策。季度轮换类别是种子数据，可在应用内编辑，过期自动降级。',
     en: 'Cashback terms follow each bank’s rules; don’t act on “To confirm” rows before verifying. Rotating categories are seed data, editable in-app, and auto-demote after expiry.',
   },
+  // ---- 设置 ----
+  'settings.title': { zh: '设置', en: 'Settings' },
+  'settings.language': { zh: '语言', en: 'Language' },
+  'settings.data': { zh: '数据管理', en: 'Data' },
+  'settings.localNote': {
+    zh: '数据只保存在浏览器 localStorage，不会发到任何服务器。换浏览器或清缓存会丢数据，记得「导出备份」。',
+    en: 'All data stays in this browser’s localStorage and is never sent to any server. Switching browsers or clearing cache loses it — remember to export a backup.',
+  },
+
   'dates.unknown': { zh: '未知', en: 'Unknown' },
 };
 
