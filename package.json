@@ -1,7 +1,7 @@
 {
   "name": "credit-card-center",
   "private": true,
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "信用卡中心 — 开源信用卡福利 / 开卡 / 转分 / 刷卡跟踪工具（纯前端，数据只存在浏览器 localStorage）",
   "type": "module",
   "scripts": {
