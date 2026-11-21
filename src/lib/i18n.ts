@@ -79,7 +79,7 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
     zh: '参考数据（转分比例、奖励、估值、刷卡返现）为公开信息，2026-11-18 核实；银行条款会变，请以发卡行官网为准。转分不可逆。',
     en: 'Reference data (transfer ratios, bonuses, valuations, earn rates) is public information, verified 2026-11-18; bank terms change — check the issuer’s site. Transfers are irreversible.',
   },
-  'app.version': { zh: '版本 v1.2.0', en: 'Version v1.2.0' },
+  'app.version': { zh: '版本 v1.2.1', en: 'Version v1.2.1' },
 
   // ---- 通用 ----
   'common.unknownDate': { zh: '待确认', en: 'To confirm' },

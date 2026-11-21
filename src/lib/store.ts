@@ -1,5 +1,6 @@
 // 状态管理：全部存在浏览器 localStorage，不联网、不上传。
-// 首次打开时为空（只装入可编辑的通用参考数据）；用户通过导入模板或手动添加卡片来填充。
+// 和打卡器一样：首次打开时为空（只装入可编辑的通用参考数据）；数据只靠用户导入备份或手动添加，
+// 只存在这台浏览器里；清空或删除后本地就没了，不会从别处再冒出来。
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type {
@@ -15,15 +16,10 @@ import type {
 } from '../types';
 import { CATALOG, PRODUCT_MAP } from '../data/catalog';
 import { CURRENCY_VALUES, EARN_RATES, TRANSFER_BONUSES, TRANSFER_RATES } from '../data/reference';
-// 首次打开的默认数据：2026-11-20 从边栏信用卡中心同步的备份（29 张卡）。
-// 由用户明确要求做到网站里，打开就有数据；注意这个仓库是公开的。
-import seedJson from '../data/seed.json';
 import { uid } from './dates';
 import { buildExportFile, mergeImport, parseImportFile, resolveProductId, type ImportSummary, type NormalizedCard } from './io';
 
 const STORAGE_KEY = 'credit-card-center-v1';
-// 用户点过「清空数据」后留下的标记：有这个标记时不再自动装入默认数据。
-const NOSEED_KEY = 'credit-card-center-v1-noseed';
 
 export interface ImportCardInput {
   bank?: string;
@@ -70,10 +66,9 @@ export function migrateProductIds(state: AppState): boolean {
 
 function loadState(): AppState {
   try {
-    const noSeed = localStorage.getItem(NOSEED_KEY) === '1';
     const raw = localStorage.getItem(STORAGE_KEY);
-    // 还没存过数据，或存的是空数据（比如之前打开过但还没导入）：直接装入默认备份。
-    if (!raw) return noSeed ? emptyState() : seedState();
+    // 还没存过数据：返回空状态，不装入任何卡片数据（和打卡器一样）。
+    if (!raw) return emptyState();
     const parsed = JSON.parse(raw) as Partial<AppState>;
     const base = emptyState();
     const state: AppState = {
@@ -85,22 +80,10 @@ function loadState(): AppState {
       transferRates: Array.isArray(parsed.transferRates) && parsed.transferRates.length ? parsed.transferRates : base.transferRates,
       currencyValues: Array.isArray(parsed.currencyValues) && parsed.currencyValues.length ? parsed.currencyValues : base.currencyValues,
     };
-    if (!noSeed && state.cards.length === 0 && state.benefits.length === 0 && state.uses.length === 0) {
-      return seedState();
-    }
     // 迁移：老版本存下的卡可能 productId 为空（当时名字匹配不上），现在匹配规则修好了，
     // 打开时自动补一次；已有 productId 的卡不动。改动由 useStore 的 effect 写回 localStorage。
     migrateProductIds(state);
     return state;
-  } catch {
-    return emptyState();
-  }
-}
-
-/** 默认数据：把同步来的备份文件走一遍导入流程，和用户手动导入的结果完全一致。 */
-function seedState(): AppState {
-  try {
-    return mergeImport(emptyState(), parseImportFile(JSON.stringify(seedJson))).state;
   } catch {
     return emptyState();
   }
@@ -156,11 +139,6 @@ export function useStore() {
         s.benefits.push(...benefits);
         return s;
       });
-      try {
-        localStorage.removeItem(NOSEED_KEY);
-      } catch {
-        /* ignore */
-      }
       return id;
     },
     [update],
@@ -252,11 +230,6 @@ export function useStore() {
       const parsed = parseImportFile(text);
       const { state: next, summary } = mergeImport(state, parsed);
       setState(next);
-      try {
-        localStorage.removeItem(NOSEED_KEY);
-      } catch {
-        /* ignore */
-      }
       return summary;
     },
     [state],
@@ -293,9 +266,8 @@ export function useStore() {
     const empty = emptyState();
     setState(empty);
     try {
-      // 写回空数据（而不是删 key），并留下不再自动装入默认数据的标记。
+      // 写回空数据（而不是删 key）；删了就是删了，不会从别处恢复。
       localStorage.setItem(STORAGE_KEY, JSON.stringify(empty));
-      localStorage.setItem(NOSEED_KEY, '1');
     } catch {
       /* ignore */
     }
