@@ -111,7 +111,7 @@ export default function App() {
         )}
 
         <main className="tab-body">
-          {tab === 'reimburse' && <ReimbursementsTab store={store} />}
+          {tab === 'reimburse' && <ReimbursementsTab store={store} onGoToHoldings={() => setTab('holdings')} />}
           {tab === 'holdings' && <HoldingsTab store={store} />}
           {tab === 'transfers' && <TransfersTab store={store} />}
           {tab === 'earn' && <EarnTab store={store} />}

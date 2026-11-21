@@ -37,7 +37,6 @@ export function effectivePct(rate: EarnRate, values: CurrencyValue[]): number | 
 
 function rankLabel(rank: number): string {
   if (rank === 0) return t('earn.rankConsider');
-  if (rank === 1) return t('earn.rankFirst');
   return t('earn.rankSecond');
 }
 
@@ -74,11 +73,12 @@ function RateRow({
         onClick={marketDetail ? () => setDetailOpen(!detailOpen) : undefined}
         style={marketDetail ? { cursor: 'pointer' } : undefined}
       >
-        {rankBadge ?? (
-          <span className={`rank-badge rank-${rate.rank === 0 ? 'consider' : rate.rank === 1 ? 'first' : 'second'}`}>
-            {rankLabel(rate.rank)}
-          </span>
-        )}
+        {rankBadge ??
+          (badge ? null : (
+            <span className={`rank-badge rank-${rate.rank === 0 ? 'consider' : rate.rank === 1 ? 'first' : 'second'}`}>
+              {rankLabel(rate.rank)}
+            </span>
+          ))}
         <BankBadge bank={rate.bank} size="xs" />
         <span className="earn-card-name">{rate.cardName}</span>
         <span className="earn-row-meta">
@@ -338,7 +338,7 @@ function CategorySection({
 }
 
 export function EarnTab({ store }: { store: Store }) {
-  const [showMarket, setShowMarket] = useState(true);
+  const [showMarket, setShowMarket] = useState(false);
   const today = todayStr();
 
   const categories = useMemo(() => {

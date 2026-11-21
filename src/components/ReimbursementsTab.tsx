@@ -227,7 +227,7 @@ function DoorDashCard({
   );
 }
 
-export function ReimbursementsTab({ store }: { store: Store }) {
+export function ReimbursementsTab({ store, onGoToHoldings }: { store: Store; onGoToHoldings: () => void }) {
   const [bankFilter, setBankFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('unused');
   const [showIgnored, setShowIgnored] = useState(false);
@@ -350,7 +350,12 @@ export function ReimbursementsTab({ store }: { store: Store }) {
       <div className="tab-sub reimburse-howto">{t('reimburse.howto')}</div>
 
       {store.state.cards.length === 0 ? (
-        <div className="empty">{t('reimburse.noCards')}</div>
+        <div className="empty">
+          <p>{t('reimburse.noCards')}</p>
+          <button type="button" className="mark-btn" onClick={onGoToHoldings}>
+            {t('reimburse.goAddCard')}
+          </button>
+        </div>
       ) : cardGroups.length === 0 ? (
         <div className="empty">{t('reimburse.noBenefits')}</div>
       ) : (

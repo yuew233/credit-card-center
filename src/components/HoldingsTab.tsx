@@ -327,7 +327,15 @@ export function HoldingsTab({ store }: { store: Store }) {
       </div>
 
       {showAdd && (
-        <div className="add-card">
+        <div className="modal-overlay" onClick={() => setShowAdd(false)}>
+          <div className="modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-head">
+              <span>{t('holdings.addCard')}</span>
+              <button type="button" className="modal-close" title={t('common.close')} onClick={() => setShowAdd(false)}>
+                ×
+              </button>
+            </div>
+            <div className="add-card">
           <Field label={t('holdings.productLabel')}>
             <select value={productId} onChange={(e) => setProductId(e.target.value)}>
               {groupedBanks.map(([bank, products]) => (
@@ -372,6 +380,8 @@ export function HoldingsTab({ store }: { store: Store }) {
             {t('common.add')}
           </button>
           <div className="add-card-hint">{t('holdings.addHint')}</div>
+            </div>
+          </div>
         </div>
       )}
 
