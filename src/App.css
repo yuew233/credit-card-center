@@ -381,7 +381,9 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 .earn-cat-name { font-weight: 700; font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
 .earn-rows { display: flex; flex-direction: column; }
 .earn-row { border-top: 1px solid var(--border); padding: 8px 0; }
-.earn-row:first-child { border-top: none; }
+/* 首行无上边框只针对普通行：最佳行是带完整边框的色块，:first-child 权重高于 .best-row，
+   不加 :not 会吃掉最佳行的上边框（深蓝/金框顶部缺口）。 */
+.earn-row:first-child:not(.best-row) { border-top: none; }
 .earn-row.expired { opacity: 0.55; }
 .earn-row-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .rank-badge { font-size: 11px; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
