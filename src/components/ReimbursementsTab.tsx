@@ -1,25 +1,28 @@
 // 报销 tab：
-// - 每张福利卡显示「还剩 $X · 截至日期」+ 进度条 + 周期徽章 + 说明
-// - 过期的当前周期福利自动隐藏，不计入总额
+// - 顶部两张汇总卡：本期未用报销（现金类、本周期可用、未忽略、非每次入住的剩余额度合计）+ 临近到期/重置（45 天内到期或重置且还有余额的项数）
+// - 未用 / 已用 / 全部是分段滑块；银行下拉只筛列表，不影响汇总
+// - 只显示最近的周期：固定周期已过的福利自动隐藏，不计入总额，到新周期再回来
+// - 不打「未用」徽章（已在未用筛选下）；临近到期只高亮截至日期
+// - 列表按卡扁平排列，不按银行分组；每张卡名前有银行 logo；卡按年费降序
 // - 免房晚（FN）第二年才开始：未开始前显示「第二年起 · 开始日」，不计入总额
 // - DoorDash 同卡多项福利合并为一张卡，两个按钮分别记账
 // - 忽略（眼睛）→ 收进底部「已忽略」区，可恢复
-// - 状态筛选 未用 / 已用 / 全部（默认未用），银行下拉筛选
+// - 标记已用按钮用 Space 站配色（#0d4a87 底白字；已用态绿边框 + 灰绿底 + 绿字）
 
 import { useMemo, useState } from 'react';
 import type { BenefitInstance } from '../types';
 import type { Store } from '../lib/store';
 import { evaluateBenefit, type BenefitView } from '../lib/periods';
 import { daysBetween, fmtShort, todayStr } from '../lib/dates';
-import { BankBadge, bankOrderIndex, Chip, IconEyeOff, IconPencil, sortBanks } from './shared';
+import { BankBadge, IconEyeOff, IconPencil } from './shared';
 import { t } from '../lib/i18n';
 
-/** 临期：本周期可用、非月度周期、截至日距今天 ≤ 30 天（月度福利每月都轮换，不标临期）。 */
+/** 临期：本周期可用、非月度周期、截至日距今天 ≤ 45 天（月度福利每月都轮换，不标临期；与 Space 站同口径）。 */
 export function isExpiringSoon(view: BenefitView, today: string): boolean {
   if (view.status !== 'available' || !view.periodEnd) return false;
   if (view.benefit.cycle === 'monthly') return false;
   const d = daysBetween(today, view.periodEnd);
-  return d >= 0 && d <= 30;
+  return d >= 0 && d <= 45;
 }
 
 type StatusFilter = 'unused' | 'used' | 'all';
@@ -66,8 +69,6 @@ function BenefitCard({
           <BankBadge bank={bank} size="xs" />
           <span className="benefit-name">{b.name}</span>
           <span className="period-badge">{view.periodLabel}</span>
-          {view.status === 'available' ? <span className="status-badge unused-badge">{t('reimburse.unused')}</span> : null}
-          {expiring ? <span className="status-badge expiring-badge">{t('reimburse.expiringSoon')}</span> : null}
         </div>
         <div className="benefit-actions">
           <button type="button" className="icon-btn" title={t('reimburse.ignore')} onClick={() => store.updateBenefit(b.id, { ignored: true })}>
@@ -94,7 +95,11 @@ function BenefitCard({
         <>
           <div className="benefit-remaining">
             {t('reimburse.remaining', { amount: fmtAmount(b, view.remaining) })}
-            {view.periodEnd ? <span className="benefit-until"> · {t('reimburse.until', { date: fmtShort(view.periodEnd) })}</span> : null}
+            {view.periodEnd ? (
+              <span className={`benefit-until ${expiring ? 'expiring-date' : ''}`}>
+                {' '}· {t('reimburse.until', { date: fmtShort(view.periodEnd) })}
+              </span>
+            ) : null}
             {b.unit === '积分' ? <span className="benefit-until"> · {t('reimburse.notCounted')}</span> : null}
           </div>
           <div className="progress">
@@ -108,15 +113,13 @@ function BenefitCard({
 
       {view.status !== 'not_started' && (
         <div className="benefit-ops">
-          {view.status === 'used' ? (
-            <button type="button" className="btn" onClick={() => togglePeriodMark(view, store)}>
-              {t('reimburse.markedUsed')}
-            </button>
-          ) : (
-            <button type="button" className="btn btn-primary" onClick={() => togglePeriodMark(view, store)}>
-              {t('reimburse.markUsed')}
-            </button>
-          )}
+          <button
+            type="button"
+            className={`mark-btn ${view.status === 'used' ? 'is-used' : ''}`}
+            onClick={() => togglePeriodMark(view, store)}
+          >
+            {view.status === 'used' ? t('reimburse.markedUsed') : t('reimburse.markUsed')}
+          </button>
         </div>
       )}
 
@@ -211,7 +214,7 @@ function DoorDashCard({
           <button
             key={v.benefit.id}
             type="button"
-            className={`btn doordash-btn ${v.status === 'used' ? 'is-used' : ''}`}
+            className={`mark-btn doordash-btn ${v.status === 'used' ? 'is-used' : ''}`}
             disabled={v.status === 'not_started'}
             onClick={() => togglePeriodMark(v, store)}
           >
@@ -242,17 +245,25 @@ export function ReimbursementsTab({ store }: { store: Store }) {
   }, [store.state]);
 
   const banks = useMemo(() => [...new Set(store.state.cards.map((c) => c.bank).filter(Boolean))].sort(), [store.state.cards]);
+  const todayS = todayStr();
 
   // 过期隐藏；未开始的 FN 显示但不计入总额
   const visible = views.filter(({ view }) => view.status !== 'expired');
-  const unusedTotal = visible
-    .filter(({ view, card }) => {
-      if (view.benefit.ignored || view.status !== 'available') return false;
-      if (view.benefit.kind !== 'cash') return false;
-      if (bankFilter && card?.bank !== bankFilter) return false;
-      return true;
-    })
-    .reduce((s, { view }) => s + view.remaining, 0);
+  // 汇总口径（全局，不受银行筛选影响）：现金类、本周期可用、未忽略、非每次入住的剩余额度合计
+  const summaryBase = visible.filter(
+    ({ view }) =>
+      !view.benefit.ignored &&
+      view.benefit.kind === 'cash' &&
+      view.status === 'available' &&
+      view.benefit.cycle !== 'per_stay',
+  );
+  const unusedTotal = summaryBase.reduce((s, { view }) => s + view.remaining, 0);
+  // 临近到期 / 重置：45 天内到期或重置且还有余额（月度、每次入住不算）
+  const expiringCount = summaryBase.filter(({ view }) => {
+    if (!view.periodEnd || view.benefit.cycle === 'monthly') return false;
+    const d = daysBetween(todayS, view.periodEnd);
+    return d >= 0 && d <= 45;
+  }).length;
 
   const filtered = visible.filter(({ view, card }) => {
     if (bankFilter && card?.bank !== bankFilter) return false;
@@ -263,9 +274,7 @@ export function ReimbursementsTab({ store }: { store: Store }) {
 
   const ignored = views.filter(({ view }) => view.benefit.ignored && view.status !== 'expired');
 
-  // 按银行分组，组内再按卡分组；DoorDash 同卡多项福利合成一张卡。
-  // 银行小计只算现金类、当前周期可用、未忽略的剩余额度（和顶部总额同口径）。
-  // 排序：组内卡按年费降序（年费未知排最后）；银行组按组内最高年费降序，同年费按原银行顺序。
+  // 扁平列表：按卡分组（DoorDash 同卡多项福利合成一张卡），卡按年费降序（年费未知排最后）
   type CardGroup = {
     cardId: string;
     cardName: string;
@@ -274,43 +283,58 @@ export function ReimbursementsTab({ store }: { store: Store }) {
     singles: { view: BenefitView }[];
     doordash: BenefitView[];
   };
-  type BankGroup = { bank: string; cards: CardGroup[]; remaining: number };
-  const bankGroups: BankGroup[] = (() => {
-    const byBank = new Map<string, BankGroup>();
+  const cardGroups: CardGroup[] = (() => {
     const byCard = new Map<string, CardGroup>();
     filtered.forEach(({ view, card }) => {
       if (view.benefit.ignored) return;
-      const bank = card?.bank ?? '';
-      let bg = byBank.get(bank);
-      if (!bg) {
-        bg = { bank, cards: [], remaining: 0 };
-        byBank.set(bank, bg);
-      }
-      if (view.benefit.kind === 'cash' && view.status === 'available') bg.remaining += view.remaining;
       const cardId = view.benefit.cardId;
       let cg = byCard.get(cardId);
       if (!cg) {
-        cg = { cardId, cardName: card?.name ?? '', bank, annualFee: card?.annualFee ?? null, singles: [], doordash: [] };
+        cg = {
+          cardId,
+          cardName: card?.name ?? '',
+          bank: card?.bank ?? '',
+          annualFee: card?.annualFee ?? null,
+          singles: [],
+          doordash: [],
+        };
         byCard.set(cardId, cg);
-        bg.cards.push(cg);
       }
       if (view.benefit.group === 'doordash') cg.doordash.push(view);
       else cg.singles.push({ view });
     });
-    const groups = sortBanks([...byBank.keys()]).map((bank) => byBank.get(bank)!);
-    groups.forEach((g) =>
-      g.cards.sort((a, b) => (b.annualFee ?? -1) - (a.annualFee ?? -1) || a.cardName.localeCompare(b.cardName)),
+    return [...byCard.values()].sort(
+      (a, b) => (b.annualFee ?? -1) - (a.annualFee ?? -1) || a.cardName.localeCompare(b.cardName),
     );
-    const topFee = (g: BankGroup) => Math.max(...g.cards.map((c) => c.annualFee ?? -1));
-    return [...groups].sort((a, b) => topFee(b) - topFee(a) || bankOrderIndex(a.bank) - bankOrderIndex(b.bank));
   })();
 
   return (
     <div>
+      <div className="reimburse-summary">
+        <div className="summary-card">
+          <div className="summary-title">{t('reimburse.summaryUnusedTitle')}</div>
+          <div className="summary-value">${unusedTotal.toLocaleString()}</div>
+          <div className="summary-sub">{t('reimburse.summaryUnusedSub')}</div>
+        </div>
+        <div className="summary-card">
+          <div className="summary-title">{t('reimburse.summaryExpiringTitle')}</div>
+          <div className="summary-value">
+            {expiringCount}
+            <span className="summary-unit">{t('reimburse.summaryExpiringUnit')}</span>
+          </div>
+          <div className="summary-sub">
+            {expiringCount > 0 ? t('reimburse.summaryExpiringSub') : t('reimburse.summaryExpiringNone')}
+          </div>
+        </div>
+      </div>
+
       <div className="tab-head">
-        <div>
-          <div className="tab-title">{t('reimburse.total', { total: unusedTotal.toLocaleString() })}</div>
-          <div className="tab-sub">{t('reimburse.totalNote')}</div>
+        <div className="seg">
+          {(['unused', 'used', 'all'] as StatusFilter[]).map((f) => (
+            <button key={f} type="button" className={statusFilter === f ? 'active' : ''} onClick={() => setStatusFilter(f)}>
+              {f === 'unused' ? t('reimburse.unused') : f === 'used' ? t('reimburse.used') : t('reimburse.all')}
+            </button>
+          ))}
         </div>
         <div className="tab-filters">
           <select value={bankFilter} onChange={(e) => setBankFilter(e.target.value)} aria-label={t('common.allBanks')}>
@@ -321,47 +345,28 @@ export function ReimbursementsTab({ store }: { store: Store }) {
               </option>
             ))}
           </select>
-          <div className="chip-row">
-            {(['unused', 'used', 'all'] as StatusFilter[]).map((f) => (
-              <Chip key={f} active={statusFilter === f} onClick={() => setStatusFilter(f)}>
-                {f === 'unused' ? t('reimburse.unused') : f === 'used' ? t('reimburse.used') : t('reimburse.all')}
-              </Chip>
-            ))}
-          </div>
         </div>
       </div>
+      <div className="tab-sub reimburse-howto">{t('reimburse.howto')}</div>
 
       {store.state.cards.length === 0 ? (
-        <div className="empty">
-          {t('reimburse.noCards')}
-        </div>
-      ) : bankGroups.length === 0 ? (
+        <div className="empty">{t('reimburse.noCards')}</div>
+      ) : cardGroups.length === 0 ? (
         <div className="empty">{t('reimburse.noBenefits')}</div>
       ) : (
-        <div className="bank-groups">
-          {bankGroups.map((g) => (
-            <section key={g.bank || 'unknown'} className="bank-group">
-              <div className="bank-group-head">
-                <BankBadge bank={g.bank} />
-                <span className="bank-group-name">{g.bank || t('common.unknown')}</span>
-                <span className="bank-group-total">
-                  {t('reimburse.remaining', { amount: `$${g.remaining.toLocaleString()}` })}
-                </span>
+        <div className="benefit-list">
+          {cardGroups.map((cg) => (
+            <div key={cg.cardId} className="card-group">
+              <div className="card-group-head">
+                <BankBadge bank={cg.bank} size="xs" /> {cg.cardName}
               </div>
-              {g.cards.map((cg) => (
-                <div key={cg.cardId} className="card-group">
-                  <div className="card-group-head">{cg.cardName}</div>
-                  <div className="benefit-list">
-                    {cg.doordash.length > 0 && (
-                      <DoorDashCard key={`dd-${cg.cardId}`} views={cg.doordash} bank={cg.bank} store={store} />
-                    )}
-                    {cg.singles.map(({ view }) => (
-                      <BenefitCard key={view.benefit.id} view={view} bank={cg.bank} store={store} />
-                    ))}
-                  </div>
-                </div>
+              {cg.doordash.length > 0 && (
+                <DoorDashCard key={`dd-${cg.cardId}`} views={cg.doordash} bank={cg.bank} store={store} />
+              )}
+              {cg.singles.map(({ view }) => (
+                <BenefitCard key={view.benefit.id} view={view} bank={cg.bank} store={store} />
               ))}
-            </section>
+            </div>
           ))}
         </div>
       )}

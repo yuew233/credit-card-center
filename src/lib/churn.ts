@@ -3,8 +3,8 @@
 // 关卡不重置时钟。所有规则均为公开的银行条款口径，估算值永远标明是估算。
 
 import type { HeldCard } from '../types';
-import { INK_FAMILY, MARRIOTT_PAIR, PRODUCT_MAP, SAPPHIRE_FAMILY } from '../data/catalog';
-import { addMonths, todayStr } from './dates';
+import { MARRIOTT_PAIR, PRODUCT_MAP, SAPPHIRE_FAMILY } from '../data/catalog';
+import { addMonths, fmtShort, todayStr } from './dates';
 import { ruleNoteEn, t } from './i18n';
 
 export interface Eligibility {
@@ -13,12 +13,21 @@ export interface Eligibility {
   nextEligibleOn: string | null;
   estimated: boolean;
   note: string;
+  /** 与另一张卡的冲突提示（如 Marriott 交叉限制），无则为 null。 */
+  conflict?: string | null;
 }
 
 function latestBonus(cards: HeldCard[]): string | null {
   const ds = cards.map((c) => c.lastBonusOn).filter((d): d is string => !!d);
   if (ds.length === 0) return null;
   return ds.sort().at(-1) ?? null;
+}
+
+/** 上次拿奖励日：有实录用实录；没有时按开卡日 + 3 个月估算（奖励一般开卡后约 3 个月到账）。 */
+function effectiveBonusOn(card: HeldCard): { date: string | null; estimated: boolean } {
+  if (card.lastBonusOn) return { date: card.lastBonusOn, estimated: false };
+  if (card.openedOn) return { date: addMonths(card.openedOn, 3), estimated: true };
+  return { date: null, estimated: false };
 }
 
 function estimateFromOpened(card: HeldCard, months: number, today: string): Eligibility {
@@ -80,6 +89,11 @@ export function evaluateCard(card: HeldCard, allCards: HeldCard[], today: Date):
       if (card.bonusReceived === false) {
         return { status: 'eligible', light: 'green', nextEligibleOn: null, estimated: false, note: t('churn.lifetimeNotTaken') };
       }
+      // 未填是否拿过：按开卡日 + 3 个月估算奖励到账日；已过该日视为已拿过（Space 站同口径）
+      const eff = effectiveBonusOn(card);
+      if (eff.date && todayS >= eff.date) {
+        return { status: 'not_yet', light: 'red', nextEligibleOn: null, estimated: true, note: t('churn.lifetimeTaken') };
+      }
       return { status: 'unknown', light: 'gray', nextEligibleOn: null, estimated: false, note: t('churn.lifetimeUnknown') };
     }
     case 'ever_had': {
@@ -140,36 +154,49 @@ export function evaluateCard(card: HeldCard, allCards: HeldCard[], today: Date):
       return estimateFromOpened(card, months, todayS);
     }
     case 'ink_family': {
-      const fam = familyCards(INK_FAMILY);
-      const received = fam.some((c) => c.bonusReceived === true);
-      if (received) {
-        return { status: 'not_yet', light: 'red', nextEligibleOn: null, estimated: false, note: t('churn.inkTaken') };
-      }
-      const lb = latestBonus(fam);
-      if (lb) {
-        return { status: 'unknown', light: 'gray', nextEligibleOn: null, estimated: false, note: t('churn.inkUnknown') };
-      }
-      return { status: 'eligible', light: 'green', nextEligibleOn: null, estimated: false, note: t('churn.inkOk') };
+      // Space 站同口径：Ink Cash / Unlimited 同一奖励家族，固定不可（奖励已用）
+      return { status: 'not_yet', light: 'red', nextEligibleOn: null, estimated: false, note: t('churn.inkTaken') };
     }
     case 'marriott_cross': {
       const months = rule.months ?? 24;
       const counterpartId = MARRIOTT_PAIR[product.id];
       const counterpart = counterpartId ? allCards.filter((c) => c.productId === counterpartId) : [];
-      const selfBonus = card.lastBonusOn;
-      const otherBonus = latestBonus(counterpart);
-      const latest = [selfBonus, otherBonus].filter((d): d is string => !!d).sort().at(-1) ?? null;
-      // AmEx 本卡也是一生一次
-      if (product.id === 'amex-marriott-brilliant' && card.bonusReceived === true) {
-        return { status: 'not_yet', light: 'red', nextEligibleOn: null, estimated: false, note: t('churn.marriottLifetime') };
+      const selfEff = effectiveBonusOn(card);
+      const otherEffs = counterpart
+        .map((c) => effectiveBonusOn(c))
+        .filter((e): e is { date: string; estimated: boolean } => e.date !== null);
+      const otherLatest = otherEffs.sort((a, b) => (a.date < b.date ? -1 : 1)).at(-1) ?? null;
+      const candidates = [selfEff, otherLatest].filter(
+        (e): e is { date: string; estimated: boolean } => !!e && e.date !== null,
+      );
+      const latest = candidates.sort((a, b) => (a.date < b.date ? -1 : 1)).at(-1) ?? null;
+      // AmEx 本卡也是一生一次：已拿过（或按开卡日估算奖励已到账）即不可
+      if (product.id === 'amex-marriott-brilliant') {
+        if (card.bonusReceived === true) {
+          return { status: 'not_yet', light: 'red', nextEligibleOn: null, estimated: false, note: t('churn.marriottLifetime'), conflict: t('churn.marriottConflictBrilliant') };
+        }
+        if (card.bonusReceived !== false && selfEff.date && todayS >= selfEff.date) {
+          return { status: 'not_yet', light: 'red', nextEligibleOn: null, estimated: true, note: t('churn.marriottLifetime'), conflict: t('churn.marriottConflictBrilliant') };
+        }
       }
       if (latest) {
-        const next = addMonths(latest, months);
+        const next = addMonths(latest.date, months);
+        let conflict: string | null = null;
+        if (product.id === 'chase-marriott-boundless' && otherLatest) {
+          const bonus = otherLatest.estimated
+            ? `${fmtShort(otherLatest.date)}，${t('churn.estShort')}`
+            : fmtShort(otherLatest.date);
+          conflict = t('churn.marriottConflictBoundless', { bonus });
+        } else if (product.id === 'amex-marriott-brilliant') {
+          conflict = t('churn.marriottConflictBrilliant');
+        }
         return {
           status: todayS >= next ? 'eligible' : 'not_yet',
           light: todayS >= next ? 'green' : 'red',
           nextEligibleOn: next,
-          estimated: false,
+          estimated: latest.estimated,
           note: t('churn.marriottCross', { months }),
+          conflict,
         };
       }
       return estimateFromOpened(card, months, todayS);
@@ -185,4 +212,20 @@ export function fiveTwentyFour(cards: HeldCard[], today: Date): number {
   return cards.filter(
     (c) => c.kind === 'personal' && c.openedOn && c.openedOn <= t && addMonths(c.openedOn, 24) > t,
   ).length;
+}
+
+export interface FiveTwentyFourEntry {
+  card: HeldCard;
+  /** 掉出 5/24 窗口的日期（开卡日 + 24 个月）。 */
+  dropOutOn: string;
+}
+
+/** 5/24 明细：过去 24 个月内开的个人卡（已关卡也计入），按开卡日期升序。 */
+export function fiveTwentyFourDetail(cards: HeldCard[], today: Date): FiveTwentyFourEntry[] {
+  const t = todayStr(today);
+  const cutoff = addMonths(t, -24);
+  return cards
+    .filter((c) => c.kind === 'personal' && c.openedOn && c.openedOn > cutoff && c.openedOn <= t)
+    .sort((a, b) => (a.openedOn! < b.openedOn! ? -1 : 1))
+    .map((card) => ({ card, dropOutOn: addMonths(card.openedOn!, 24) }));
 }

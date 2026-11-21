@@ -81,22 +81,24 @@ function RateRow({
         )}
         <BankBadge bank={rate.bank} size="xs" />
         <span className="earn-card-name">{rate.cardName}</span>
-        {rate.quarterly ? <span className="q4-tag">Q4</span> : null}
-        {badge}
-        <span className="earn-rate">{rate.rateText || t('earn.unverifiedRate')}</span>
-        {rate.pending ? <span className="pending-badge">{t('earn.pendingBadge')}</span> : null}
-        {expired ? <span className="pending-badge expired-badge">{t('earn.expired')}</span> : null}
-        <button
-          type="button"
-          className="icon-btn"
-          title={t('common.edit')}
-          onClick={(e) => {
-            e.stopPropagation();
-            setEditing(!editing);
-          }}
-        >
-          ✎
-        </button>
+        <span className="earn-row-meta">
+          {rate.quarterly ? <span className="q4-tag">Q4</span> : null}
+          {badge}
+          <span className="earn-rate">{rate.rateText || t('earn.unverifiedRate')}</span>
+          {rate.pending ? <span className="pending-badge">{t('earn.pendingBadge')}</span> : null}
+          {expired ? <span className="pending-badge expired-badge">{t('earn.expired')}</span> : null}
+          <button
+            type="button"
+            className="icon-btn"
+            title={t('common.edit')}
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditing(!editing);
+            }}
+          >
+            ✎
+          </button>
+        </span>
       </div>
       {gapText ? <div className="earn-gap">{gapText}</div> : null}
       {rate.reason ? <div className="earn-reason">{rate.reason}</div> : null}

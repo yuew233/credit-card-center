@@ -79,7 +79,7 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
     zh: '参考数据（转分比例、奖励、估值、刷卡返现）为公开信息，2026-11-18 核实；银行条款会变，请以发卡行官网为准。转分不可逆。',
     en: 'Reference data (transfer ratios, bonuses, valuations, earn rates) is public information, verified 2026-11-18; bank terms change — check the issuer’s site. Transfers are irreversible.',
   },
-  'app.version': { zh: '版本 v1.1.0', en: 'Version v1.1.0' },
+  'app.version': { zh: '版本 v1.2.0', en: 'Version v1.2.0' },
 
   // ---- 通用 ----
   'common.unknownDate': { zh: '待确认', en: 'To confirm' },
@@ -123,6 +123,16 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
   'reimburse.doordashNote': { zh: '每月（自然月）额度；自提订单有最低消费门槛。', en: 'Monthly (calendar month) allowance; pickup orders have a minimum spend.' },
   'reimburse.doordashUsed': { zh: '（已用）', en: '(used)' },
   'reimburse.expiringSoon': { zh: '临期', en: 'Expiring soon' },
+  'reimburse.summaryUnusedTitle': { zh: '本期未用报销', en: 'Unused this period' },
+  'reimburse.summaryUnusedSub': { zh: '所有持卡中卡的美元额度合计', en: 'Total dollar allowances across your open cards' },
+  'reimburse.summaryExpiringTitle': { zh: '临近到期 / 重置', en: 'Expiring / resetting soon' },
+  'reimburse.summaryExpiringUnit': { zh: ' 项', en: ' items' },
+  'reimburse.summaryExpiringSub': { zh: '45 天内到期或重置且还有余额', en: 'Ending or resetting within 45 days with balance left' },
+  'reimburse.summaryExpiringNone': { zh: '暂无临近到期的额度', en: 'Nothing expiring soon' },
+  'reimburse.howto': {
+    zh: '点按钮标记本期已用，再点一次撤销。已过期的额度自动隐藏、不计入统计，到新周期会自动回来。点卡片右上角的眼睛图标可暂时忽略一项额度，已忽略的在列表底部恢复。',
+    en: 'Tap the button to mark this period used; tap again to undo. Expired allowances auto-hide and don’t count, and return when the new period starts. Tap the eye icon to temporarily ignore an allowance; ignored ones can be restored at the bottom of the list.',
+  },
   'period.anniversary': { zh: '持卡周年', en: 'Anniversary year' },
   'period.calendarYear': { zh: '自然年', en: 'Calendar year' },
   'period.monthly': { zh: '自然月', en: 'Calendar month' },
@@ -134,7 +144,7 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
 
   // ---- 持卡 ----
   'holdings.eligible': { zh: '可申请 / 可重开', en: 'Eligible / can re-apply' },
-  'holdings.notYet': { zh: '尚未可申请', en: 'Not yet eligible' },
+  'holdings.notYet': { zh: '不可申请', en: 'Not eligible' },
   'holdings.unknown': { zh: '待确认', en: 'To confirm' },
   'holdings.f524': { zh: '5/24（个人卡）', en: '5/24 (personal)' },
   'holdings.all': { zh: '全部', en: 'All' },
@@ -155,7 +165,42 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
   'holdings.openWithCount': { zh: '持有中 · {n} 张', en: 'Open · {n}' },
   'holdings.closedWithCount': { zh: '已关卡 · {n} 张', en: 'Closed · {n}' },
   'holdings.statusEligible': { zh: '可申请', en: 'Eligible' },
-  'holdings.statusNotYet': { zh: '尚未可申请', en: 'Not yet' },
+  'holdings.statusNotYet': { zh: '不可申请', en: 'Not eligible' },
+  'holdings.lastBonusEst': { zh: '待确认（按开卡日估算 {date}）', en: 'To confirm (estimated {date} from opened date)' },
+  'holdings.f524Title': { zh: '5/24 明细与规则参考', en: '5/24 details & rules reference' },
+  'holdings.f524ListTitle': { zh: '近 24 个月计入 5/24 的个人卡（{n} 张）：', en: 'Personal cards counting toward 5/24 in the last 24 months ({n}):' },
+  'holdings.f524ClosedNote': { zh: '（已关，仍计入）', en: ' (closed, still counts)' },
+  'holdings.f524Dropout': { zh: ' 起掉出窗口', en: ' drops off' },
+  'holdings.f524UnknownNote': {
+    zh: '5/24 目前只算了日期已知的卡：还有 {n} 张个人卡开卡日期未知，若其中有近 24 个月内开的，实际计数会更高。补全日期后这里会自动更新。',
+    en: '5/24 only counts cards with known dates: {n} personal cards still have unknown opened dates — if any were opened in the last 24 months, the real count is higher. It updates automatically once you fill in the dates.',
+  },
+  'holdings.rulesP1': {
+    zh: '以下为业内通行的发行方规则参考，具体以银行官方条款为准：Chase 个人卡受 5/24 约束（商业卡不计入，但申请 Chase 卡时会被查）；Sapphire 系列（CSP/CSR）开卡奖励间隔 48 个月，自上次 Sapphire 奖励起算。',
+    en: 'Common issuer rules for reference — the banks’ official terms govern: Chase personal cards are subject to 5/24 (business cards don’t count, but are checked when you apply for a Chase card); Sapphire (CSP/CSR) bonuses require 48 months since your last Sapphire bonus.',
+  },
+  'holdings.rulesP2': {
+    zh: 'Amex 多数卡开卡奖励为一生一次（同一张卡拿过就不能再拿）；Amex 与 Chase 的 Marriott 系列有交叉限制，申 Boundless / Brilliant 前要一起算。',
+    en: 'Most AmEx cards are once per lifetime (you can’t earn the bonus again on the same card); AmEx and Chase Marriott cards have cross-restrictions — check Boundless / Brilliant together before applying.',
+  },
+  'holdings.rulesP3a': { zh: 'Marriott 交叉限制（据', en: 'Marriott cross-restriction (per ' },
+  'holdings.rulesP3Link': { zh: '美卡指南汇总', en: 'US Credit Card Guide summary' },
+  'holdings.rulesP3b': {
+    zh: '，2026.5 更新口径；2026.3 的严苛限制已回滚）：Chase Boundless/Bold 与 AmEx Brilliant 互相限制——一方拿奖励后 24 个月内另一方拿不到奖励，90 天内新拿过对方卡也有 90 天限制；但「正在持有」本身不限制，可以同时持有两张。Chase Bountiful 与 Boundless 互不限制；AmEx Marriott Business、Bevy 与 Brilliant/Boundless 互不限制（同一张卡 AmEx 终身一次照旧）。',
+    en: ', updated May 2026; the strict March 2026 limits were rolled back): Chase Boundless/Bold and AmEx Brilliant block each other — no bonus on one within 24 months of a bonus on the other, plus a 90-day limit if you recently got the other card; but “currently holding” itself is not restricted, you can hold both at once. Chase Bountiful and Boundless don’t block each other; AmEx Marriott Business and Bevy don’t block Brilliant/Boundless (the once-per-lifetime rule on the same AmEx card still applies).',
+  },
+  'holdings.rulesP3c': {
+    zh: '你现在的组合：Brilliant（{date} 开）的奖励到账后 24 个月内，Boundless 拿不到新奖励（约到 {year} 年底，按估算）；Bountiful 现在就可以申请。',
+    en: 'Your situation: for 24 months after the Brilliant bonus posts (opened {date}), Boundless can’t earn a new bonus (until around end of {year}, estimated); Bountiful can be applied for right now.',
+  },
+  'holdings.rulesP4': {
+    zh: 'Chase Ink：Cash 与 Unlimited 现为同一奖励 family，拿过其中一张的奖励就拿不到另一张的；Ink Preferred 现行条款对之前持有过的人可能不再给奖励，申请时 Chase 会在 hard pull 前弹出资格提示。所有间隔时钟都从「上次拿奖励日」起算，关卡不会重置时钟——多数卡要重开拿奖励，须先关卡再申请同一张。',
+    en: 'Chase Ink: Cash and Unlimited now share one bonus family — a bonus on one blocks the other; Ink Preferred’s current terms may deny a new bonus to anyone who held it before, and Chase shows an eligibility prompt before the hard pull. Every interval clock runs from the “last bonus posted date”; closing a card doesn’t reset the clock — to re-earn a bonus on most cards, close the card first, then re-apply for the same one.',
+  },
+  'holdings.rulesP5': {
+    zh: 'Citi AAdvantage 个人卡与商业卡奖励间隔各为 48 个月；Chase Ink 商业卡奖励通常要求距上次同卡奖励 24 个月。在每张卡里填上「上次奖励到账日」和间隔月数，这里会自动算出下次可拿奖励的日期。',
+    en: 'Citi AAdvantage personal and business cards each require 48 months between bonuses; Chase Ink business cards usually require 24 months since the last bonus on the same card. Fill in each card’s “last bonus posted date” and interval months, and the next eligible date is calculated automatically.',
+  },
   'holdings.statusUnknown': { zh: '待确认', en: 'To confirm' },
   'holdings.rule': { zh: '规则', en: 'Rule' },
   'holdings.business': { zh: '商业卡', en: 'Business' },
@@ -190,6 +235,15 @@ export const STRINGS: Record<string, { zh: string; en: string }> = {
   'churn.inkOk': { zh: '家族内尚未拿过奖励，可以申请。', en: 'No bonus received in the family yet; can apply.' },
   'churn.marriottLifetime': { zh: 'AmEx 本卡一生一次，已拿过奖励。', en: 'Once per lifetime on this AmEx card; bonus already received.' },
   'churn.marriottCross': { zh: '与另一张 Marriott 卡交叉限制 {months} 个月：距最近一次拿奖励起算。', en: 'Marriott cross-restriction, {months} months: counted from the last bonus on either card.' },
+  'churn.marriottConflictBoundless': {
+    zh: '与 AmEx Brilliant 互相限制：Brilliant 奖励（{bonus}）后 24 个月内 Boundless 拿不到新奖励；正在持有两张本身不限制。Chase Bountiful 与 Boundless 互不限制，现在可申请。',
+    en: 'Cross-restricted with AmEx Brilliant: no new Boundless bonus within 24 months of the Brilliant bonus ({bonus}); holding both at once is not restricted. Chase Bountiful and Boundless don’t block each other — Bountiful can be applied for now.',
+  },
+  'churn.marriottConflictBrilliant': {
+    zh: '与 Chase Boundless 互相限制：本卡奖励后 24 个月内 Boundless 拿不到新奖励；持有本身不限制。与 Chase Bountiful、AmEx Marriott Business / Bevy 互不限制。',
+    en: 'Cross-restricted with Chase Boundless: no new Boundless bonus within 24 months of this card’s bonus; holding itself is not restricted. No cross-restriction with Chase Bountiful or AmEx Marriott Business / Bevy.',
+  },
+  'churn.estShort': { zh: '估算', en: 'estimated' },
   'churn.custom': { zh: '自定义卡，没有对应产品的规则。', en: 'Custom card; no catalog rule applies.' },
 
   // ---- 转分 ----

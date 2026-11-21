@@ -1,5 +1,5 @@
 // 持卡 tab：开卡奖励资格管理。
-// - 顶部概览：可申请 / 尚未可申请 / 待确认 / 5/24
+// - 顶部概览：可申请 / 不可申请 / 待确认 / 5/24
 // - 每张卡默认收起为一行（银行、卡名、持有时长、红绿灯），点开看日期、费用、规则与编辑
 // - 间隔从上次拿奖励日期起算；没有该日期时按开卡日 + 3 个月估算并标注“估算”
 // - 关卡不重置时钟
@@ -7,9 +7,9 @@
 import { useMemo, useState } from 'react';
 import type { HeldCard } from '../types';
 import type { Store } from '../lib/store';
-import { evaluateCard, fiveTwentyFour, type Eligibility } from '../lib/churn';
+import { evaluateCard, fiveTwentyFour, fiveTwentyFourDetail, type Eligibility } from '../lib/churn';
 import { CATALOG } from '../data/catalog';
-import { fmtShort, heldDuration } from '../lib/dates';
+import { addMonths, fmtShort, heldDuration } from '../lib/dates';
 import { BankBadge, Chip, Field, sortBanks } from './shared';
 import { t, useLang } from '../lib/i18n';
 
@@ -61,6 +61,7 @@ function CardRow({ card, eligibility, store }: { card: HeldCard; eligibility: El
             <span className="hold-rule-label">{t('holdings.rule')}：</span>
             {eligibility.note}
           </div>
+          {eligibility.conflict ? <div className="hold-conflict">⚠ {eligibility.conflict}</div> : null}
           <dl className="hold-dl">
             <div>
               <dt>{t('holdings.openedOn')}</dt>
@@ -72,7 +73,13 @@ function CardRow({ card, eligibility, store }: { card: HeldCard; eligibility: El
             </div>
             <div>
               <dt>{t('holdings.lastBonus')}</dt>
-              <dd>{fmtDate(card.lastBonusOn)}</dd>
+              <dd>
+                {card.lastBonusOn
+                  ? fmtDate(card.lastBonusOn)
+                  : card.openedOn
+                    ? t('holdings.lastBonusEst', { date: fmtShort(addMonths(card.openedOn, 3)) })
+                    : t('common.unknownDate')}
+              </dd>
             </div>
             <div>
               <dt>{t('holdings.bonusReceived')}</dt>
@@ -147,6 +154,60 @@ function CardRow({ card, eligibility, store }: { card: HeldCard; eligibility: El
         </div>
       )}
     </div>
+  );
+}
+
+/** 5/24 明细与规则参考（Space 站同款，全部动态计算，绝不写死）。 */
+function FiveTwentyFourSection({ cards, today }: { cards: HeldCard[]; today: Date }) {
+  const detail = fiveTwentyFourDetail(cards, today);
+  const unknownCount = cards.filter((c) => c.kind === 'personal' && !c.openedOn).length;
+  const brilliant = cards.find(
+    (c) =>
+      c.status === 'open' &&
+      (c.productId === 'amex-marriott-brilliant' || c.name === 'Marriott Bonvoy Brilliant') &&
+      c.openedOn,
+  );
+  const p3cYear = brilliant?.openedOn ? addMonths(addMonths(brilliant.openedOn, 3), 24).slice(0, 4) : '';
+  return (
+    <section className="f524-section">
+      <h2 className="f524-title">{t('holdings.f524Title')}</h2>
+      <div className="f524-list-title">{t('holdings.f524ListTitle', { n: detail.length })}</div>
+      <ul className="f524-list">
+        {detail.map(({ card, dropOutOn }) => (
+          <li key={card.id}>
+            {card.bank} {card.name} — {fmtShort(card.openedOn!)}
+            {card.status === 'closed' ? t('holdings.f524ClosedNote') : ''}
+            {' · '}
+            {fmtShort(dropOutOn)}
+            {t('holdings.f524Dropout')}
+          </li>
+        ))}
+      </ul>
+      {unknownCount > 0 ? <div className="f524-unknown">{t('holdings.f524UnknownNote', { n: unknownCount })}</div> : null}
+      <div className="f524-rules">
+        <p>{t('holdings.rulesP1')}</p>
+        <p>{t('holdings.rulesP2')}</p>
+        <p>
+          {t('holdings.rulesP3a')}
+          <a
+            href="https://www.uscreditcardguide.com/marriott-bonvoy-lianmingkakaikajianglixianzhizhengcehuizongjishenqingcelue/?mobile="
+            target="_blank"
+            rel="noreferrer"
+          >
+            {t('holdings.rulesP3Link')}
+          </a>
+          {t('holdings.rulesP3b')}
+          {brilliant?.openedOn ? (
+            <>
+              {' '}
+              {t('holdings.rulesP3c', { date: fmtShort(brilliant.openedOn), year: p3cYear })}
+            </>
+          ) : null}
+        </p>
+        <p>{t('holdings.rulesP4')}</p>
+        <p>{t('holdings.rulesP5')}</p>
+      </div>
+    </section>
   );
 }
 
@@ -343,6 +404,7 @@ export function HoldingsTab({ store }: { store: Store }) {
           );
         })
       )}
+      <FiveTwentyFourSection cards={store.state.cards} today={today} />
       <div className="tab-foot-note">{t('holdings.footNote')}</div>
     </div>
   );

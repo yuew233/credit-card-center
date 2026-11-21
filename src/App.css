@@ -13,6 +13,12 @@
   --red: #c0392b;
   --amber: #b7791f;
   --radius: 16px;
+  /* Space 站配色（batch 5：报销汇总卡、标记按钮、刷哪张最佳行与 Space 同款） */
+  --accent: #0d4a87;
+  --accent-soft: #e2ebf5;
+  --gold: #8a6100;
+  --gold-soft: #faf0d2;
+  --gold-border: #d9a92c;
 }
 body {
   margin: 0;
@@ -143,13 +149,10 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 }
 .benefit-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .benefit-actions .icon-btn svg { display: block; }
-/* 未用 / 临期徽章 */
-.status-badge { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
-.unused-badge { color: var(--navy); background: var(--navy-light); }
-.expiring-badge { color: #8a5a00; background: #fdf3e0; }
 .benefit-remaining { font-size: 14px; font-weight: 700; margin-top: 8px; }
 .benefit-remaining.not-started { color: var(--amber); font-size: 13px; }
 .benefit-until { font-size: 12px; font-weight: 400; color: var(--muted); }
+.benefit-until.expiring-date { color: var(--amber); font-weight: 700; }
 .progress { position: relative; height: 4px; background: #e8ebee; border-radius: 999px; margin: 10px 0 4px; }
 .progress-fill { height: 100%; background: var(--navy); border-radius: 999px; }
 .progress-dot {
@@ -169,12 +172,13 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 .use-chip { background: var(--bg); border-radius: 999px; padding: 1px 4px 1px 8px; font-size: 11px; }
 .use-del { background: none; border: none; cursor: pointer; color: var(--muted); padding: 0 2px; }
 .benefit-ops { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
-/* 标记已用按钮：全宽、加大 */
-.benefit-ops .btn { flex: 1; width: 100%; padding: 11px 0; font-size: 14px; }
+/* 标记已用按钮：Space 站配色（#0d4a87 底白字；已用态绿边框 + 灰绿底 + 绿字），全宽 36px 高 */
+.mark-btn { width: 100%; min-height: 36px; padding: 6px 16px; font-size: 13px; font-weight: 600; border-radius: 14px; border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+.mark-btn.is-used { background: #e7ebef; border-color: var(--green); color: var(--green); }
 .partial { display: inline-flex; gap: 6px; }
 .partial input { width: 110px; border: 1px solid var(--border); border-radius: 8px; padding: 5px 8px; }
 .doordash-btns { display: flex; gap: 8px; margin-top: 10px; }
-.doordash-btn { flex: 1; padding: 11px 0; font-size: 13px; }
+.doordash-btns .mark-btn { width: auto; flex: 1; }
 .ignored-section { margin-top: 14px; }
 .ignored-toggle { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 12px; padding: 4px 0; }
 .ignored-card { opacity: 0.7; }
@@ -213,14 +217,22 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 .bank-logo { height: 14px; width: auto; max-width: 72px; object-fit: contain; object-position: left center; display: inline-block; vertical-align: middle; }
 .bank-logo.xs { height: 12px; max-width: 56px; }
 
-/* ---- 报销：银行分组 ---- */
-.bank-groups { display: flex; flex-direction: column; gap: 16px; }
-.bank-group-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.bank-group-name { font-weight: 700; font-size: 14px; }
-.bank-group-total { margin-left: auto; font-size: 12px; color: var(--muted); font-weight: 700; }
+/* ---- 报销：按卡扁平列表（卡名前带银行 logo） ---- */
 .card-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
-.card-group-head { font-size: 12px; font-weight: 700; color: var(--muted); }
-.doordash-btn.is-used { opacity: 0.6; }
+.card-group-head { font-size: 12px; font-weight: 700; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+
+/* ---- 报销：顶部汇总卡 + 分段滑块 ---- */
+.reimburse-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.summary-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 10px; }
+.summary-title { font-size: 11px; color: var(--muted); }
+.summary-value { font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; margin: 2px 0; }
+.summary-unit { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 2px; }
+.summary-sub { font-size: 11px; color: var(--muted); line-height: 1.5; }
+@media (min-width: 640px) { .summary-value { font-size: 22px; } }
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; background: var(--card); }
+.seg button { border: none; background: none; padding: 5px 14px; font-size: 12px; color: var(--muted); cursor: pointer; }
+.seg button.active { background: var(--navy); color: #fff; font-weight: 600; }
+.reimburse-howto { margin-bottom: 10px; }
 
 /* ---- 持卡：持有中 / 已关卡 + 银行分组 ---- */
 .hold-section { margin-bottom: 14px; }
@@ -235,6 +247,17 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 .hold-bank-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
 .hold-bank-name { font-weight: 700; font-size: 12px; }
 .hold-bank-count { color: var(--muted); font-size: 11px; }
+.hold-conflict { color: var(--red); font-size: 12px; margin-top: 6px; }
+
+/* ---- 持卡：5/24 明细与规则参考 ---- */
+.f524-section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-top: 14px; font-size: 12px; line-height: 2; }
+.f524-title { font-size: 13px; margin: 0 0 6px; }
+.f524-list-title { font-weight: 700; }
+.f524-list { margin: 0; padding-left: 18px; }
+.f524-unknown { color: var(--muted); margin-top: 6px; }
+.f524-rules { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px; color: var(--muted); }
+.f524-rules p { margin: 0 0 8px; }
+.f524-rules a { color: var(--navy); }
 
 /* 持卡 */
 .overview { display: flex; gap: 10px; margin-bottom: 12px; }
@@ -354,8 +377,8 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 .q-banner-off { background: #fff; color: var(--muted); border: 1px solid var(--border); }
 .earn-cats { display: flex; flex-direction: column; gap: 10px; }
 .earn-cat { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
-.earn-cat-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-.earn-cat-name { font-weight: 700; font-size: 13px; }
+.earn-cat-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.earn-cat-name { font-weight: 700; font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
 .earn-rows { display: flex; flex-direction: column; }
 .earn-row { border-top: 1px solid var(--border); padding: 8px 0; }
 .earn-row:first-child { border-top: none; }
@@ -365,7 +388,9 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 .rank-first { background: var(--navy); color: #fff; }
 .rank-second { background: var(--navy-light); color: var(--navy); }
 .rank-consider { background: #f5f0e6; color: var(--amber); }
-.earn-card-name { font-weight: 600; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.earn-card-name { font-weight: 600; flex: 1 1 120px; min-width: 0; overflow-wrap: anywhere; }
+/* 刷哪张行尾元素（Q4 标记、徽章、费率、待核对/过期标记、编辑）整体换行，不挤压卡名 */
+.earn-row-meta { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .earn-rate { font-weight: 700; color: var(--navy); white-space: nowrap; }
 .earn-row-top .icon-btn { flex-shrink: 0; }
 .pending-badge { font-size: 11px; color: var(--amber); background: #fdf3e0; border-radius: 999px; padding: 1px 7px; }
@@ -387,13 +412,15 @@ input, select { font-family: inherit; font-size: 13px; color: var(--text); }
 
 /* ---- 刷哪张：我的最佳 / 市场最佳 / Q4 标记 / 折叠 ---- */
 .earn-view-toggle { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
-.my-best-badge { font-size: 11px; font-weight: 700; color: #fff; background: #2563eb; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
-.market-best-badge { font-size: 11px; font-weight: 700; color: #7a5c00; background: #fef3c7; border: 1px solid #f5d76e; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
-.market-rank-badge { font-size: 11px; color: #7a5c00; background: #fef9e7; border: 1px solid #f5d76e; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
-.market-row { border: 1px solid #f5d76e; border-radius: 10px; padding: 8px 10px; margin-top: 6px; background: #fffdf5; }
-/* 最佳行高亮：我的最佳蓝框蓝底，市场最佳金框 */
-.best-row { border: 1.5px solid var(--navy); border-radius: 12px; padding: 10px 12px; margin: 4px 0; background: #f2f7fb; }
-.best-row.best-market { border-color: #e8a100; background: #fffdf5; }
+.my-best-badge { font-size: 11px; font-weight: 700; color: #fff; background: var(--accent); border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
+.market-best-badge { font-size: 11px; font-weight: 700; color: var(--gold); background: var(--gold-soft); border: 1px solid var(--gold-border); border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
+.market-rank-badge { font-size: 11px; color: var(--gold); background: var(--gold-soft); border: 1px solid var(--gold-border); border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
+.market-row { border: 1px solid var(--gold-border); border-radius: 10px; padding: 8px 10px; margin-top: 6px; background: #fffdf5; }
+/* 最佳行高亮：我的最佳深蓝框蓝底，市场最佳金框 */
+.best-row { border: 1.5px solid var(--accent); border-radius: 12px; padding: 10px 12px; margin: 4px 0; background: var(--accent-soft); }
+.best-row.best-mine .earn-rate { color: var(--accent); }
+.best-row.best-market { border-color: var(--gold-border); background: #fff; }
+.best-row.best-market .earn-rate { color: var(--gold); }
 .market-row .earn-row-top { flex-wrap: wrap; }
 .q4-tag { font-size: 11px; font-weight: 700; color: #fff; background: var(--navy); border-radius: 4px; padding: 1px 5px; white-space: nowrap; }
 .expand-toggle { display: block; width: 100%; text-align: left; background: none; border: none; color: var(--navy); font-size: 12px; padding: 6px 0; cursor: pointer; }

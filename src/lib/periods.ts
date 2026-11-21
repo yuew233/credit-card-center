@@ -147,6 +147,20 @@ export function evaluateBenefit(
   }
 
   const period = currentPeriod(b, openedOn, today);
+  // 固定周期已过（例如上半年福利到了下半年）：本期已结束，自动隐藏，到新周期再回来
+  if (period && t > period.end) {
+    return {
+      benefit: b,
+      period,
+      periodLabel: cycleLabel(b),
+      periodEnd: period.end,
+      remaining: 0,
+      used: 0,
+      status: 'expired',
+      startsOn: null,
+    };
+  }
+
   const myUses = uses.filter((u) => u.benefitId === b.id);
   let used = 0;
   if (b.cycle === 'one_time') {
